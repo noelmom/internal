@@ -1,0 +1,8 @@
+.env
+**/data/
+pihole/etc-pihole/
+pihole/etc-dnsmasq.d/
+cloudflared/*.json
+grafana/data/
+loki/data/
+prometheus/data/
