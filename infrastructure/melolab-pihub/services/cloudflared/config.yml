@@ -1,0 +1,11 @@
+tunnel: 0a1a5bb4-33cd-4b77-82e1-7842f8ec08af
+credentials-file: /etc/cloudflared/0a1a5bb4-33cd-4b77-82e1-7842f8ec08af.json
+
+ingress:
+  - hostname: status.melolab.dev
+    service: http://homepage:3000
+
+  - hostname: uptime.melolab.dev
+    service: http://uptime-kuma:3001
+
+  - service: http_status:404
