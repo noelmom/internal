@@ -1,0 +1,14 @@
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - /home/noelmomelo/.cloudflared:/home/nonroot/.cloudflared:ro
+      - ../services/cloudflared:/etc/cloudflared:ro
+    depends_on:
+      - homepage
+      - uptime-kuma
+    networks:
+      - pihub
