@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT="/opt/internal/infrastructure/melolab-pihub"
+
+cd "$PROJECT"
+
+usage() {
+    echo ""
+    echo "Usage:"
+    echo "  restart <service>"
+    echo "  restart all"
+    echo ""
+    echo "Examples:"
+    echo "  restart homepage"
+    echo "  restart cloudflared"
+    echo "  restart pihole"
+    echo "  restart all"
+    exit 1
+}
+
+[[ $# -eq 0 ]] && usage
+
+SERVICE="$1"
+
+case "$SERVICE" in
+    all)
+        echo "🔄 Restarting entire stack..."
+        docker compose restart
+        ;;
+    *)
+        echo "🔄 Restarting $SERVICE..."
+        docker compose up -d --force-recreate "$SERVICE"
+        ;;
+esac
+
+echo ""
+docker compose ps

@@ -6,6 +6,6 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./services/uptime-kuma/data:/app/data
+      - ../services/uptime-kuma/data:/app/data
     networks:
       - pihub

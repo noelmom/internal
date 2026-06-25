@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+PROJECT="/opt/internal/infrastructure/melolab-pihub"
+
+cd "$PROJECT"
+
+echo
+echo "Stopping MeloLab PiHub..."
+echo
+
+docker compose down
+
+echo
+echo "Stack stopped."

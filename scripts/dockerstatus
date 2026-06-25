@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+cd /opt/internal/infrastructure/melolab-pihub
+
+docker compose ps
