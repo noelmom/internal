@@ -3,8 +3,10 @@ services:
     image: louislam/uptime-kuma:latest
     container_name: uptime-kuma
     restart: unless-stopped
+    env_file:
+      - ../.env
     ports:
-      - "3001:3001"
+      - "${UPTIME_KUMA_PORT}:3001"
     volumes:
       - ../services/uptime-kuma/data:/app/data
     networks:

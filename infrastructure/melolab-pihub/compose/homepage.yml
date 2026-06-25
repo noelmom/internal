@@ -7,8 +7,11 @@ services:
     environment:
       HOMEPAGE_ALLOWED_HOSTS: ${HOMEPAGE_ALLOWED_HOSTS}
 
+    env_file:
+      - ../.env
+
     ports:
-      - "3000:3000"
+      - "${HOMEPAGE_PORT}:3000"
 
     volumes:
       - ../services/homepage/config:/app/config

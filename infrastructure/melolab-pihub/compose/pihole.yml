@@ -1,0 +1,33 @@
+services:
+  pihole:
+    image: pihole/pihole:${PIHOLE_VERSION}
+    container_name: pihole
+    hostname: ${HOSTNAME}
+
+    restart: unless-stopped
+
+    env_file:
+      - ../.env
+
+    environment:
+      TZ: ${TZ}
+      FTLCONF_webserver_api_password: ${PIHOLE_WEB_PASSWORD}
+
+      PIHOLE_DNS_: ${PIHOLE_DNS1};${PIHOLE_DNS2}
+
+      DNSMASQ_LISTENING: all
+
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "${PIHOLE_WEB_PORT}:80"
+
+    volumes:
+      - ../services/pihole/etc-pihole:/etc/pihole
+      - ../services/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
+
+    cap_add:
+      - NET_ADMIN
+
+    networks:
+      - pihub
