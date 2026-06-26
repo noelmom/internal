@@ -8,6 +8,6 @@ services:
     ports:
       - "${UPTIME_KUMA_PORT}:3001"
     volumes:
-      - ../services/uptime-kuma/data:/app/data
+      - ../runtime/uptime-kuma/data:/app/data
     networks:
       - pihub
