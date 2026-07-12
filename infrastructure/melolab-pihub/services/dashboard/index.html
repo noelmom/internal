@@ -5,11 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Birdview - fleet dashboard</title>
 <style>
-  :root {
-    --bg:#141413; --surface-1:#242423; --surface-2:#1b1b1a; --border:#3a3a38;
+  :root { --bg:#141413; --surface-1:#242423; --surface-2:#1b1b1a; --border:#3a3a38;
     --border-strong:#5f5e5a; --text:#eceae3; --text-2:#b4b2a9; --muted:#888780;
-    --ok:#639922; --blue:#378ADD; --mono:ui-monospace,Menlo,monospace;
-  }
+    --ok:#639922; --blue:#378ADD; --mono:ui-monospace,Menlo,monospace; }
   * { box-sizing:border-box; }
   html,body { margin:0; height:100%; }
   body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
@@ -20,8 +18,9 @@
   .pill { font-size:12px; color:var(--text-2); background:var(--surface-1); padding:3px 10px; border-radius:99px; }
   .run { margin-left:auto; font-size:13px; color:var(--text-2); display:flex; align-items:center; gap:6px; }
   .run .dot { width:8px; height:8px; border-radius:50%; background:var(--ok); box-shadow:0 0 7px var(--ok); }
-  .btn { font:inherit; font-size:13px; background:transparent; color:var(--text-2); border:0.5px solid var(--border-strong); border-radius:8px; padding:6px 12px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+  .btn { font:inherit; font-size:12.5px; background:transparent; color:var(--text-2); border:0.5px solid var(--border-strong); border-radius:8px; padding:5px 10px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
   .btn:hover { color:var(--text); border-color:var(--text); }
+  .btn.on { color:var(--text); border-color:var(--text); background:var(--surface-1); }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; padding:16px; }
   .card { border:0.5px solid var(--border); border-radius:10px; overflow:hidden; cursor:pointer; background:var(--surface-1); transition:transform .08s, border-color .12s; }
   .card:hover { transform:translateY(-2px); border-color:var(--border-strong); }
@@ -29,8 +28,7 @@
   .card .preview .ov { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--text); background:rgba(20,20,19,.55); opacity:0; transition:opacity .12s; }
   .card:hover .preview .ov { opacity:1; }
   .preview.term { background:#2C2C2A; padding:10px 12px; font-family:var(--mono); font-size:9px; line-height:1.7; color:#D3D1C7; }
-  .preview.term .g { color:#9FE1CB; }
-  .preview.term .d { color:#888780; }
+  .preview.term .g { color:#9FE1CB; } .preview.term .d { color:#888780; }
   .cursor { display:inline-block; width:6px; height:11px; background:#9FE1CB; vertical-align:-1px; }
   .preview.desk { background:#3b4252; }
   .preview.desk .win { position:absolute; top:16px; left:14px; width:60%; height:82px; background:#e5e9f0; border-radius:4px; overflow:hidden; }
@@ -49,20 +47,25 @@
   a.card.empty .plus { font-size:24px; }
   #detail { position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:40; }
   #detail.show { display:flex; }
-  .dhead { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:0.5px solid var(--border); }
+  .dhead { display:flex; align-items:center; gap:10px; padding:9px 14px; border-bottom:0.5px solid var(--border); flex:0 0 auto; }
   .dhead .nm { font-size:14px; font-weight:600; }
   .dhead .dot { width:7px; height:7px; border-radius:50%; background:var(--ok); }
   .dhead .sub { font-size:12px; color:var(--muted); }
-  .dhead .acts { margin-left:auto; display:flex; gap:6px; }
-  #dbody { flex:1; display:grid; grid-template-columns:1fr; min-height:0; }
-  #dbody.split { grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); }
-  @media (max-width:820px){ #dbody.split { grid-template-columns:1fr; grid-template-rows:1fr 1fr; } }
-  .pane { display:flex; flex-direction:column; min-width:0; min-height:0; border-right:0.5px solid var(--border); }
-  .pane:last-child { border-right:0; }
-  .pane .plabel { font-size:11px; color:var(--muted); padding:6px 12px; border-bottom:0.5px solid var(--border); display:flex; align-items:center; gap:6px; }
+  .dhead .acts { margin-left:auto; display:flex; gap:6px; align-items:center; }
+  #dbody { flex:1 1 auto; display:flex; min-height:0; min-width:0; }
+  #dbody.lay-row { flex-direction:row; }
+  #dbody.lay-col { flex-direction:column; }
+  .pane { display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; flex-basis:0; }
+  .pane .plabel { font-size:11px; color:var(--muted); padding:5px 11px; border-bottom:0.5px solid var(--border); display:flex; align-items:center; gap:6px; flex:0 0 auto; }
   .pane .plabel .live { margin-left:auto; color:var(--ok); }
   .pane .plabel .inter { margin-left:auto; color:var(--blue); }
-  .pane iframe { flex:1; width:100%; border:0; background:#000; min-height:0; }
+  .pane .plabel .pclose { border:0; background:transparent; color:var(--muted); cursor:pointer; font-size:15px; line-height:1; padding:0 2px; }
+  .pane .plabel .pclose:hover { color:var(--text); }
+  .pane iframe { flex:1 1 auto; width:100%; border:0; background:#000; min-height:0; }
+  .gutter { flex:0 0 auto; background:var(--border); touch-action:none; }
+  .gutter:hover { background:var(--border-strong); }
+  .lay-row > .gutter { width:5px; cursor:col-resize; }
+  .lay-col > .gutter { height:5px; cursor:row-resize; }
 </style>
 </head>
 <body>
@@ -79,22 +82,22 @@
 </div>
 <div id="detail">
   <div class="dhead">
-    <button class="btn" id="back" title="Back">&#8592; Back</button>
+    <button class="btn" id="back">&#8592; Back</button>
     <span class="nm" id="d-nm"></span>
     <span class="dot"></span>
     <span class="sub" id="d-sub"></span>
-    <span class="acts"><button class="btn" id="reload" title="Reconnect">&#10227;</button></span>
+    <span class="acts">
+      <button class="btn" id="lay-row" title="Side by side">Cols</button>
+      <button class="btn" id="lay-col" title="Stacked">Rows</button>
+      <button class="btn" id="add-shell" title="Add SSH shell">+ Shell</button>
+    </span>
   </div>
-  <div id="dbody"></div>
+  <div id="dbody" class="lay-row"></div>
 </div>
 <script>
-  // A node is a fleet machine. It can expose vnc, ssh, or BOTH (-> split view).
-  // vnc/ssh values are guacamole_connection.connection_id.
   var NODES = [
     { name:"pve",    sub:"root &middot; SSH via Tailscale", ssh:1 },
     { name:"Mac Ai", sub:"mini-ai &middot; macOS",          vnc:2, ssh:3 }
-    // both-node example (renders split view):
-    // { name:"hermes-01", sub:"agent VM", vnc:3, ssh:4 }
   ];
   var host = location.hostname;
   var guacBase = "http://" + host + ":8080/guacamole/";
@@ -102,60 +105,94 @@
   document.getElementById("guaclink").href = adminUrl;
   function clientId(id){ var N=String.fromCharCode(0); return btoa(id+N+"c"+N+"postgresql"); }
   function clientUrl(id){ return guacBase + "#/client/" + clientId(id); }
-  function badges(n){
-    var b = "";
-    if (n.vnc) b += "<span class=\"badge\">VNC</span>";
-    if (n.ssh) b += "<span class=\"badge\">SSH</span>";
-    return b;
-  }
+  function badges(n){ return (n.vnc?"<span class=\"badge\">VNC</span>":"") + (n.ssh?"<span class=\"badge\">SSH</span>":""); }
   function preview(n){
     if (n.vnc) {
-      var term = n.ssh ? "<div class=\"term2\"><div style=\"color:#88c0d0\">tmux: agent</div><div>&gt; working&hellip;</div></div>" : "";
-      return "<div class=\"preview desk\"><div class=\"win\"><div class=\"tb\"></div><div class=\"ln\" style=\"width:70%\"></div><div class=\"ln\" style=\"width:48%\"></div><div class=\"ln\" style=\"width:60%\"></div></div>" + term + "<div class=\"bar\"></div><div class=\"ov\">" + (n.ssh ? "Click for desktop + terminal" : "Click to open desktop") + "</div></div>";
+      var t = n.ssh ? "<div class=\"term2\"><div style=\"color:#88c0d0\">tmux: agent</div><div>&gt; working&hellip;</div></div>" : "";
+      return "<div class=\"preview desk\"><div class=\"win\"><div class=\"tb\"></div><div class=\"ln\" style=\"width:70%\"></div><div class=\"ln\" style=\"width:48%\"></div><div class=\"ln\" style=\"width:60%\"></div></div>" + t + "<div class=\"bar\"></div><div class=\"ov\">" + (n.ssh?"Click: desktop + terminal":"Click to open desktop") + "</div></div>";
     }
     return "<div class=\"preview term\"><div class=\"d\">tailscale ssh &rarr; " + n.name + "</div><div class=\"g\">connection ready</div><div>&nbsp;</div><div class=\"g\">$ <span class=\"cursor\"></span></div><div class=\"ov\">Click to open shell</div></div>";
   }
   var grid = document.getElementById("grid");
   NODES.forEach(function(n){
-    var card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = preview(n) +
-      "<div class=\"foot\"><span class=\"dot\"></span><span class=\"nm\">" + n.name + "</span>" +
-      "<span class=\"sub\">" + n.sub + "</span><span class=\"badges\">" + badges(n) + "</span></div>";
+    var card = document.createElement("div"); card.className = "card";
+    card.innerHTML = preview(n) + "<div class=\"foot\"><span class=\"dot\"></span><span class=\"nm\">" + n.name + "</span><span class=\"sub\">" + n.sub + "</span><span class=\"badges\">" + badges(n) + "</span></div>";
     card.addEventListener("click", function(){ openNode(n); });
     grid.appendChild(card);
   });
-  var empty = document.createElement("a");
-  empty.className = "card empty"; empty.href = adminUrl; empty.target = "_blank";
-  empty.innerHTML = "<div class=\"plus\">+</div><div>New agent</div>";
-  grid.appendChild(empty);
+  var empty = document.createElement("a"); empty.className="card empty"; empty.href=adminUrl; empty.target="_blank";
+  empty.innerHTML = "<div class=\"plus\">+</div><div>New agent</div>"; grid.appendChild(empty);
   document.getElementById("run").textContent = NODES.length + " nodes";
+
   var detail = document.getElementById("detail");
   var dbody = document.getElementById("dbody");
-  var current = null;
-  function pane(label, tag, tagClass, connId){
-    return "<div class=\"pane\"><div class=\"plabel\">" + label +
-      "<span class=\"" + tagClass + "\">" + tag + "</span></div>" +
-      "<iframe allow=\"clipboard-read; clipboard-write\" src=\"" + clientUrl(connId) + "\"></iframe></div>";
+  var node = null, shellN = 0;
+
+  function makePane(type, connId, label){
+    var el = document.createElement("div"); el.className = "pane"; el.style.flexGrow = "1";
+    var cls = type==="vnc" ? "live" : "inter", tag = type==="vnc" ? "live" : "interactive";
+    el.innerHTML = "<div class=\"plabel\"><span>" + label + "</span><span class=\"" + cls + "\">" + tag + "</span><button class=\"pclose\" title=\"Close pane\">&times;</button></div><iframe allow=\"clipboard-read; clipboard-write\" src=\"" + clientUrl(connId) + "\"></iframe>";
+    el.querySelector(".pclose").addEventListener("click", function(){ removePane(el); });
+    return el;
+  }
+  function makeGutter(){
+    var g = document.createElement("div"); g.className = "gutter";
+    g.addEventListener("pointerdown", function(e){ startDrag(g, e); });
+    return g;
+  }
+  function addPane(type, connId, label){
+    if (dbody.children.length > 0) dbody.appendChild(makeGutter());
+    dbody.appendChild(makePane(type, connId, label));
+  }
+  function removePane(el){
+    var sib = el.previousElementSibling;
+    if (sib && sib.classList.contains("gutter")) sib.remove();
+    else { var n2 = el.nextElementSibling; if (n2 && n2.classList.contains("gutter")) n2.remove(); }
+    el.remove();
+    if (dbody.querySelectorAll(".pane").length === 0) closeNode();
+  }
+  function startDrag(g, e){
+    var prev = g.previousElementSibling, next = g.nextElementSibling;
+    if (!prev || !next) return;
+    e.preventDefault(); g.setPointerCapture(e.pointerId);
+    var horiz = dbody.classList.contains("lay-row");
+    var start = horiz ? e.clientX : e.clientY;
+    var a = horiz ? prev.offsetWidth : prev.offsetHeight;
+    var b = horiz ? next.offsetWidth : next.offsetHeight;
+    var total = a + b;
+    function move(ev){
+      var cur = horiz ? ev.clientX : ev.clientY;
+      var na = Math.max(60, Math.min(total - 60, a + (cur - start)));
+      prev.style.flexGrow = na; next.style.flexGrow = (total - na);
+    }
+    function up(){ g.releasePointerCapture(e.pointerId); g.removeEventListener("pointermove", move); g.removeEventListener("pointerup", up); }
+    g.addEventListener("pointermove", move); g.addEventListener("pointerup", up);
+  }
+  function setLayout(l){
+    dbody.className = l === "col" ? "lay-col" : "lay-row";
+    document.getElementById("lay-row").classList.toggle("on", l !== "col");
+    document.getElementById("lay-col").classList.toggle("on", l === "col");
+    dbody.querySelectorAll(".pane").forEach(function(p){ p.style.flexGrow = "1"; });
   }
   function openNode(n){
-    current = n;
+    node = n; shellN = 0;
     document.getElementById("d-nm").textContent = n.name;
     document.getElementById("d-sub").innerHTML = n.sub;
-    if (n.vnc && n.ssh) {
-      dbody.className = "split";
-      dbody.innerHTML = pane("Desktop &middot; VNC", "live", "live", n.vnc) +
-                        pane("Terminal &middot; SSH", "interactive", "inter", n.ssh);
-    } else {
-      dbody.className = "";
-      dbody.innerHTML = "<iframe allow=\"clipboard-read; clipboard-write\" style=\"width:100%;height:100%;border:0;background:#000\" src=\"" + clientUrl(n.vnc || n.ssh) + "\"></iframe>";
-    }
+    dbody.innerHTML = ""; setLayout("row");
+    if (n.vnc) addPane("vnc", n.vnc, "Desktop &middot; VNC");
+    if (n.ssh) { shellN = 1; addPane("ssh", n.ssh, "Terminal &middot; SSH"); }
+    document.getElementById("add-shell").style.display = n.ssh ? "" : "none";
     detail.classList.add("show");
   }
-  function closeNode(){ detail.classList.remove("show"); dbody.innerHTML = ""; current = null; }
+  function closeNode(){ detail.classList.remove("show"); dbody.innerHTML = ""; node = null; }
   document.getElementById("back").addEventListener("click", closeNode);
-  document.getElementById("reload").addEventListener("click", function(){ if(current) openNode(current); });
-  document.addEventListener("keydown", function(e){ if(e.key==="Escape" && detail.classList.contains("show")) closeNode(); });
+  document.getElementById("lay-row").addEventListener("click", function(){ setLayout("row"); });
+  document.getElementById("lay-col").addEventListener("click", function(){ setLayout("col"); });
+  document.getElementById("add-shell").addEventListener("click", function(){
+    if (!node || !node.ssh) return;
+    shellN++; addPane("ssh", node.ssh, "Shell " + shellN + " &middot; SSH");
+  });
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape" && detail.classList.contains("show")) closeNode(); });
 </script>
 </body>
 </html>
