@@ -86,6 +86,11 @@
   .cheat-body .row .desc { margin-left:auto; color:var(--text-2); text-align:right; }
   kbd { font-family:var(--mono); font-size:11px; background:var(--surface-2); border:0.5px solid var(--border-strong); border-bottom-width:1.5px; border-radius:5px; padding:1px 6px; color:var(--text); white-space:nowrap; }
   @media (max-width:560px){ .cheat-body { grid-template-columns:1fr; } }
+  .pane.active { box-shadow: inset 0 0 0 1px var(--blue); }
+  #keybar { display:none; gap:6px; padding:8px 10px; border-top:0.5px solid var(--border); background:var(--surface-1); overflow-x:auto; flex:0 0 auto; -webkit-overflow-scrolling:touch; }
+  #keybar.on { display:flex; }
+  #keybar button { flex:0 0 auto; font:inherit; font-size:14px; min-width:42px; height:40px; padding:0 13px; background:var(--surface-2); color:var(--text); border:0.5px solid var(--border-strong); border-radius:8px; cursor:pointer; touch-action:manipulation; }
+  #keybar button.sticky { background:var(--blue); color:#fff; border-color:var(--blue); }
 </style>
 </head>
 <body>
@@ -115,6 +120,18 @@
     </span>
   </div>
   <div id="dbody" class="lay-row"></div>
+  <div id="keybar">
+    <button data-k="esc">Esc</button>
+    <button data-k="ctrl" data-sticky="1">Ctrl</button>
+    <button data-k="prefix">C-b</button>
+    <button data-k="tab">Tab</button>
+    <button data-k="left">&#8592;</button>
+    <button data-k="down">&#8595;</button>
+    <button data-k="up">&#8593;</button>
+    <button data-k="right">&#8594;</button>
+    <button data-k="enter">&#9166;</button>
+  </div>
+
 </div>
 <div id="picker" class="modal">
   <div class="pick-card">
@@ -166,7 +183,7 @@
     { name:"vox-beta", sub:"this Mac &middot; macOS",  vnc:6, ssh:5 }
   ];
   var host = location.hostname;
-  var guacBase = "http://" + host + ":8080/guacamole/";
+  var guacBase = "/guacamole/";
   var adminUrl = guacBase + "#/settings/postgresql";
   document.getElementById("guaclink").href = adminUrl;
   function clientId(id){ var N=String.fromCharCode(0); return btoa(id+N+"c"+N+"postgresql"); }
@@ -198,6 +215,7 @@
     var cls = type==="vnc" ? "live" : "inter", tag = type==="vnc" ? "live" : "interactive";
     el.innerHTML = "<div class=\"plabel\"><span>" + label + "</span><span class=\"" + cls + "\">" + tag + "</span><button class=\"pclose\" title=\"Close pane\">&times;</button></div><iframe allow=\"clipboard-read; clipboard-write\" src=\"" + clientUrl(connId) + "\"></iframe>";
     el.querySelector(".pclose").addEventListener("click", function(){ removePane(el); });
+    el.querySelector(".plabel").addEventListener("click", function(ev){ if(!ev.target.classList.contains("pclose")) setActive(el); });
     return el;
   }
   function makeGutter(){ var g = document.createElement("div"); g.className = "gutter"; g.addEventListener("pointerdown", function(e){ startDrag(g, e); }); return g; }
@@ -243,6 +261,7 @@
       if (t === "vnc" && n.vnc) addPane("vnc", n.vnc, "Desktop &middot; VNC");
       if (t === "ssh" && n.ssh) { shellN++; addPane("ssh", n.ssh, "Terminal &middot; SSH"); }
     });
+    var fp = dbody.querySelector(".pane[data-type=ssh]") || dbody.querySelector(".pane"); if(fp) setActive(fp);
     updateButtons();
     detail.classList.add("show");
   }
@@ -271,6 +290,27 @@
     else if (cheat.classList.contains("show")) cheat.classList.remove("show");
     else if (detail.classList.contains("show")) closeNode();
   });
+  var KEYSYM = { esc:0xff1b, tab:0xff09, enter:0xff0d, up:0xff52, down:0xff54, left:0xff51, right:0xff53 };
+  var CTRL=0xffe3, activePane=null, ctrlSticky=false;
+  function setActive(el){ activePane=el; dbody.querySelectorAll(".pane").forEach(function(p){ p.classList.toggle("active", p===el); }); }
+  function activeClient(){
+    var pane = (activePane && activePane.isConnected) ? activePane : (dbody.querySelector(".pane[data-type=ssh]") || dbody.querySelector(".pane"));
+    if(!pane) return null;
+    var fr = pane.querySelector("iframe");
+    try { var w=fr.contentWindow; var mgr=w.angular.element(w.document.body).injector().get("guacClientManager"); var cs=mgr.getManagedClients(); for(var id in cs){ if(cs[id].client) return cs[id].client; } }
+    catch(e){ console.log("keybar: guac client not reachable", e); }
+    return null;
+  }
+  function keyBtn(k, btn){
+    var c=activeClient(); if(!c) return;
+    if(k==="ctrl"){ ctrlSticky=!ctrlSticky; btn.classList.toggle("sticky", ctrlSticky); return; }
+    if(k==="prefix"){ c.sendKeyEvent(1,CTRL); c.sendKeyEvent(1,0x62); c.sendKeyEvent(0,0x62); c.sendKeyEvent(0,CTRL); return; }
+    var ks=KEYSYM[k]; if(ks==null) return;
+    if(ctrlSticky){ c.sendKeyEvent(1,CTRL); c.sendKeyEvent(1,ks); c.sendKeyEvent(0,ks); c.sendKeyEvent(0,CTRL); ctrlSticky=false; var cb=document.querySelector("#keybar [data-k=ctrl]"); if(cb) cb.classList.remove("sticky"); }
+    else { c.sendKeyEvent(1,ks); c.sendKeyEvent(0,ks); }
+  }
+  document.querySelectorAll("#keybar button").forEach(function(b){ b.addEventListener("click", function(){ keyBtn(b.dataset.k, b); }); });
+  if(("ontouchstart" in window) || navigator.maxTouchPoints>0){ document.getElementById("keybar").classList.add("on"); }
 </script>
 </body>
 </html>
