@@ -1,14 +1,18 @@
 -- Guacamole connection definitions for the melolab-pihub deployment.
--- Idempotent; safe to re-run. Apply with:
+-- Idempotent; safe to re-run:
 --   docker exec -i guac-postgres psql -U guacamole_user -d guacamole_db < connections.sql
 --
--- SECRETS ARE OMITTED (set them in the UI or via a separate secret step):
+-- SECRETS ARE OMITTED (set in the UI or a separate step):
 --   - "Mac Ai" VNC password
---   - "mini-ai (SSH)" private-key (dedicated guacamole@pihub ed25519 key; its
---     public half is in mini-ai:~/.ssh/authorized_keys)
+--   - "mini-ai (SSH)" private-key (dedicated guacamole@pihub ed25519 key; pubkey
+--     lives in mini-ai:~/.ssh/authorized_keys)
 --
--- NOTE: leave each connection's "guacd" hostname/port blank. A literal 0 in
--- proxy_port makes the webapp connect to guacd:0 -> "connection refused".
+-- HOST DEPENDENCY: SSH connections run command=/usr/local/bin/tmux-menu, a small
+--   script on each target that attaches a tmux session (with a chooser) or makes
+--   one if none. Targets need tmux + that script.
+--
+-- NOTE: leave each connection guacd hostname/port blank; a literal 0 in
+-- proxy_port makes the webapp hit guacd:0 -> connection refused.
 
 BEGIN;
 
@@ -18,6 +22,7 @@ WHERE NOT EXISTS (SELECT 1 FROM guacamole_connection WHERE connection_name='pve 
 INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, parameter_value)
 SELECT c.connection_id, v.name, v.val FROM guacamole_connection c
 JOIN (VALUES ('hostname','100.68.96.14'),('port','22'),('username','root'),
+  ('command','/usr/local/bin/tmux-menu'),
   ('recording-path','/recordings'),('create-recording-path','true'),
   ('recording-name','${GUAC_DATE}-${GUAC_TIME}-pve')) AS v(name,val) ON TRUE
 WHERE c.connection_name='pve (root, Tailscale SSH)'
