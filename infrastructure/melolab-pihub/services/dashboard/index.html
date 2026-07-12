@@ -91,6 +91,7 @@
   #keybar.on { display:flex; }
   #keybar button { flex:0 0 auto; font:inherit; font-size:14px; min-width:42px; height:40px; padding:0 13px; background:var(--surface-2); color:var(--text); border:0.5px solid var(--border-strong); border-radius:8px; cursor:pointer; touch-action:manipulation; }
   #keybar button.sticky { background:var(--blue); color:#fff; border-color:var(--blue); }
+  #kbinput { flex:1 1 130px; min-width:110px; height:40px; background:var(--surface-2); color:var(--text); border:0.5px solid var(--border-strong); border-radius:8px; padding:0 12px; font:inherit; font-size:14px; }
 </style>
 </head>
 <body>
@@ -129,7 +130,10 @@
     <button data-k="down">&#8595;</button>
     <button data-k="up">&#8593;</button>
     <button data-k="right">&#8594;</button>
-    <button data-k="enter">&#9166;</button>
+    <button data-k="enter">Enter</button>
+    <button data-k="scrollup" title="Scroll up">PgUp</button>
+    <button data-k="scrolldn" title="Scroll down">PgDn</button>
+    <input id="kbinput" type="text" placeholder="tap to type" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false">
   </div>
 
 </div>
@@ -305,11 +309,18 @@
     var c=activeClient(); if(!c) return;
     if(k==="ctrl"){ ctrlSticky=!ctrlSticky; btn.classList.toggle("sticky", ctrlSticky); return; }
     if(k==="prefix"){ c.sendKeyEvent(1,CTRL); c.sendKeyEvent(1,0x62); c.sendKeyEvent(0,0x62); c.sendKeyEvent(0,CTRL); return; }
+    if(k==="scrollup"){ c.sendKeyEvent(1,CTRL); c.sendKeyEvent(1,0x62); c.sendKeyEvent(0,0x62); c.sendKeyEvent(0,CTRL); c.sendKeyEvent(1,0xff55); c.sendKeyEvent(0,0xff55); return; }
+    if(k==="scrolldn"){ c.sendKeyEvent(1,0xff56); c.sendKeyEvent(0,0xff56); return; }
     var ks=KEYSYM[k]; if(ks==null) return;
     if(ctrlSticky){ c.sendKeyEvent(1,CTRL); c.sendKeyEvent(1,ks); c.sendKeyEvent(0,ks); c.sendKeyEvent(0,CTRL); ctrlSticky=false; var cb=document.querySelector("#keybar [data-k=ctrl]"); if(cb) cb.classList.remove("sticky"); }
     else { c.sendKeyEvent(1,ks); c.sendKeyEvent(0,ks); }
   }
   document.querySelectorAll("#keybar button").forEach(function(b){ b.addEventListener("click", function(){ keyBtn(b.dataset.k, b); }); });
+  var kbinput=document.getElementById("kbinput");
+  if(kbinput){
+    kbinput.addEventListener("input", function(){ var c=activeClient(); if(!c){ kbinput.value=""; return; } var t=kbinput.value; for(var i=0;i<t.length;i++){ var cp=t.charCodeAt(i); c.sendKeyEvent(1,cp); c.sendKeyEvent(0,cp); } kbinput.value=""; });
+    kbinput.addEventListener("keydown", function(e){ var c=activeClient(); if(!c) return; var m={Backspace:0xff08,Enter:0xff0d,Tab:0xff09,Escape:0xff1b,ArrowUp:0xff52,ArrowDown:0xff54,ArrowLeft:0xff51,ArrowRight:0xff53}; if(m[e.key]!==undefined){ c.sendKeyEvent(1,m[e.key]); c.sendKeyEvent(0,m[e.key]); e.preventDefault(); } });
+  }
   if(("ontouchstart" in window) || navigator.maxTouchPoints>0){ document.getElementById("keybar").classList.add("on"); }
 </script>
 </body>
