@@ -162,7 +162,8 @@
   var NODES = [
     { name:"pve",    sub:"root &middot; SSH via Tailscale", ssh:1 },
     { name:"Mac Ai", sub:"mini-ai &middot; macOS",          vnc:2, ssh:3 },
-    { name:"pihub",  sub:"control hub &middot; SSH",        ssh:4 }
+    { name:"pihub",  sub:"control hub &middot; SSH",        ssh:4 },
+    { name:"vox-beta", sub:"this Mac &middot; macOS",  vnc:6, ssh:5 }
   ];
   var host = location.hostname;
   var guacBase = "http://" + host + ":8080/guacamole/";

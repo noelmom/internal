@@ -57,13 +57,36 @@ ON CONFLICT (connection_id, parameter_name) DO UPDATE SET parameter_value=EXCLUD
 
 INSERT INTO guacamole_connection (connection_name, protocol, max_connections, max_connections_per_user)
 SELECT 'pihub (SSH)', 'ssh', 20, 20
-WHERE NOT EXISTS (SELECT 1 FROM guacamole_connection WHERE connection_name='pihub (SSH)');
+WHERE NOT EXISTS (SELECT 1 FROM guacamole_connection WHERE connection_name='pihub (SSH)','vox-beta (SSH)','vox-beta (VNC)');
 INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, parameter_value)
 SELECT c.connection_id, v.name, v.val FROM guacamole_connection c
 JOIN (VALUES ('hostname','172.19.0.1'),('port','22'),('username','noelmomelo'),
   ('command','/usr/local/bin/tmux-menu'),('recording-path','/recordings'),
   ('create-recording-path','true'),('recording-name','${GUAC_DATE}-${GUAC_TIME}-pihub')) AS v(name,val) ON TRUE
 WHERE c.connection_name='pihub (SSH)'
+ON CONFLICT (connection_id, parameter_name) DO UPDATE SET parameter_value=EXCLUDED.parameter_value;
+
+
+INSERT INTO guacamole_connection (connection_name, protocol, max_connections, max_connections_per_user)
+SELECT 'vox-beta (SSH)', 'ssh', 20, 20
+WHERE NOT EXISTS (SELECT 1 FROM guacamole_connection WHERE connection_name='vox-beta (SSH)');
+INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, parameter_value)
+SELECT c.connection_id, v.name, v.val FROM guacamole_connection c
+JOIN (VALUES ('hostname','100.117.201.57'),('port','22'),('username','noelmomelo'),
+  ('command','/opt/homebrew/bin/tmux-menu'),('recording-path','/recordings'),
+  ('create-recording-path','true'),('recording-name','${GUAC_DATE}-${GUAC_TIME}-vox-ssh')) AS v(name,val) ON TRUE
+WHERE c.connection_name='vox-beta (SSH)'
+ON CONFLICT (connection_id, parameter_name) DO UPDATE SET parameter_value=EXCLUDED.parameter_value;
+
+INSERT INTO guacamole_connection (connection_name, protocol)
+SELECT 'vox-beta (VNC)', 'vnc'
+WHERE NOT EXISTS (SELECT 1 FROM guacamole_connection WHERE connection_name='vox-beta (VNC)');
+INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, parameter_value)
+SELECT c.connection_id, v.name, v.val FROM guacamole_connection c
+JOIN (VALUES ('hostname','100.117.201.57'),('port','5900'),('username','noelmomelo'),
+  ('clipboard-encoding','ISO8859-1'),('recording-path','/recordings'),
+  ('create-recording-path','true'),('recording-name','${GUAC_DATE}-${GUAC_TIME}-vox-vnc')) AS v(name,val) ON TRUE
+WHERE c.connection_name='vox-beta (VNC)'
 ON CONFLICT (connection_id, parameter_name) DO UPDATE SET parameter_value=EXCLUDED.parameter_value;
 
 INSERT INTO guacamole_connection_permission (entity_id, connection_id, permission)
