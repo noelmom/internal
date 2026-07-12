@@ -7,9 +7,10 @@
 --   - "mini-ai (SSH)" private-key (dedicated guacamole@pihub ed25519 key; pubkey
 --     lives in mini-ai:~/.ssh/authorized_keys)
 --
--- HOST DEPENDENCY: SSH connections run command=/usr/local/bin/tmux-menu, a small
---   script on each target that attaches a tmux session (with a chooser) or makes
---   one if none. Targets need tmux + that script.
+-- HOST DEPENDENCY: SSH connections run command=<tmux-menu>, a small script on
+--   each target that attaches a tmux session (with a chooser) or makes one if
+--   none. pve: /usr/local/bin/tmux-menu. mini-ai (macOS/Homebrew, tmux not in
+--   the ssh PATH): /opt/homebrew/bin/tmux-menu, which calls tmux by full path.
 --
 -- NOTE: leave each connection guacd hostname/port blank; a literal 0 in
 -- proxy_port makes the webapp hit guacd:0 -> connection refused.
@@ -45,6 +46,7 @@ WHERE NOT EXISTS (SELECT 1 FROM guacamole_connection WHERE connection_name='mini
 INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, parameter_value)
 SELECT c.connection_id, v.name, v.val FROM guacamole_connection c
 JOIN (VALUES ('hostname','100.126.156.116'),('port','22'),('username','noelmomelo'),
+  ('command','/opt/homebrew/bin/tmux-menu'),
   ('recording-path','/recordings'),('create-recording-path','true'),
   ('recording-name','${GUAC_DATE}-${GUAC_TIME}-mini-ai')) AS v(name,val) ON TRUE
 WHERE c.connection_name='mini-ai (SSH)'
