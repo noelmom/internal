@@ -2,16 +2,13 @@ tunnel: 0a1a5bb4-33cd-4b77-82e1-7842f8ec08af
 credentials-file: /home/nonroot/.cloudflared/0a1a5bb4-33cd-4b77-82e1-7842f8ec08af.json
 
 ingress:
-  - hostname: status.melolab.dev
-    service: http://homepage:3000
-
   - hostname: uptime.melolab.dev
     service: http://uptime-kuma:3001
 
-  - hostname: pihole.melolab.dev
-    service: http://pihole:80
-
   - hostname: vox.melolab.dev
     service: http://192.168.1.221:8000
+
+  - hostname: omnia.melolab.dev
+    service: http://192.168.1.221:5174
 
   - service: http_status:404

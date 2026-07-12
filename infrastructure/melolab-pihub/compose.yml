@@ -1,8 +1,6 @@
 include:
-  - ./compose/homepage.yml
   - ./compose/uptime-kuma.yml
   - ./compose/cloudflared.yml
-  - ./compose/pihole.yml
 
 networks:
   pihub:
