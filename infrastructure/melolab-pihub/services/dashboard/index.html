@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Birdview - fleet dashboard</title>
+<style>
+  :root {
+    --bg:#141413; --surface:#1b1b1a; --surface-2:#242423; --border:#3a3a38;
+    --border-strong:#5f5e5a; --text:#eceae3; --muted:#888780; --ok:#639922;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; }
+  body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); display:flex; flex-direction:column; height:100vh; }
+  header { display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:0.5px solid var(--border); flex:0 0 auto; }
+  header .dot { width:9px; height:9px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok); }
+  header h1 { font-size:15px; font-weight:600; margin:0; letter-spacing:.2px; }
+  header .tag { font-size:12px; color:var(--muted); }
+  header .spacer { margin-left:auto; }
+  header a.btn { font-size:12px; color:var(--muted); text-decoration:none; border:0.5px solid var(--border-strong); border-radius:8px; padding:5px 11px; }
+  header a.btn:hover { color:var(--text); border-color:var(--text); }
+  .grid { flex:1 1 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:16px; padding:16px; overflow:auto; }
+  .tile { border:0.5px solid var(--border); border-radius:12px; overflow:hidden; background:var(--surface); display:flex; flex-direction:column; min-height:68vh; }
+  .tile .bar { display:flex; align-items:center; gap:8px; padding:9px 13px; border-bottom:0.5px solid var(--border); font-size:13px; flex:0 0 auto; }
+  .tile .bar .dot { width:7px; height:7px; border-radius:50%; background:var(--ok); }
+  .tile .bar strong { font-weight:600; }
+  .tile .bar .sub { color:var(--muted); font-size:11.5px; }
+  .tile .bar .badge { font-size:10px; color:var(--muted); border:0.5px solid var(--border-strong); border-radius:99px; padding:2px 8px; }
+  .tile .bar .exp { margin-left:auto; cursor:pointer; background:transparent; border:0; color:var(--muted); font-size:15px; line-height:1; padding:3px 6px; border-radius:6px; }
+  .tile .bar .exp:hover { color:var(--text); background:var(--surface-2); }
+  .tile iframe { flex:1 1 auto; width:100%; border:0; background:#000; }
+  .tile.full { position:fixed; inset:0; z-index:50; border-radius:0; min-height:0; }
+  .hint { padding:9px 18px; font-size:11.5px; color:var(--muted); border-top:0.5px solid var(--border); flex:0 0 auto; }
+</style>
+</head>
+<body>
+<header>
+  <span class="dot"></span>
+  <h1>Birdview</h1>
+  <span class="tag" id="count">fleet dashboard</span>
+  <span class="spacer"></span>
+  <a class="btn" id="guaclink" href="#" target="_blank">Open Guacamole &#8599;</a>
+</header>
+<div class="grid" id="grid"></div>
+<div class="hint">Tiles inherit your Guacamole session &mdash; log in once and they connect automatically. Click the icon to fullscreen a tile (Esc to exit).</div>
+<script>
+  var CONNECTIONS = [
+    { connId: 1, name: "pve",    sub: "root &middot; SSH via Tailscale", proto: "SSH" },
+    { connId: 2, name: "Mac Ai", sub: "mini-ai &middot; macOS desktop",  proto: "VNC" }
+  ];
+  var host = location.hostname;
+  var guacBase = "http://" + host + ":8080/guacamole/";
+  document.getElementById("guaclink").href = guacBase;
+  function clientId(connId) {
+    var NUL = String.fromCharCode(0);
+    return btoa(connId + NUL + "c" + NUL + "postgresql");
+  }
+  var grid = document.getElementById("grid");
+  CONNECTIONS.forEach(function (c) {
+    var tile = document.createElement("div");
+    tile.className = "tile";
+    tile.innerHTML =
+      "<div class=\"bar\">" +
+        "<span class=\"dot\"></span><strong>" + c.name + "</strong>" +
+        "<span class=\"sub\">" + c.sub + "</span>" +
+        "<span class=\"badge\">" + c.proto + "</span>" +
+        "<button class=\"exp\" title=\"Fullscreen\">&#9974;</button>" +
+      "</div>" +
+      "<iframe allow=\"clipboard-read; clipboard-write\" title=\"" + c.name + "\" " +
+        "src=\"" + guacBase + "#/client/" + clientId(c.connId) + "\"></iframe>";
+    tile.querySelector(".exp").addEventListener("click", function () {
+      var full = tile.classList.toggle("full");
+      this.innerHTML = full ? "&times;" : "&#9974;";
+    });
+    grid.appendChild(tile);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") document.querySelectorAll(".tile.full").forEach(function (t) {
+      t.classList.remove("full"); var b = t.querySelector(".exp"); if (b) b.innerHTML = "&#9974;";
+    });
+  });
+  document.getElementById("count").textContent = "fleet dashboard &middot; " + CONNECTIONS.length + " connections";
+</script>
+</body>
+</html>

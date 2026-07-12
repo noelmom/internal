@@ -2,6 +2,7 @@ include:
   - ./compose/uptime-kuma.yml
   - ./compose/cloudflared.yml
   - ./compose/guacamole.yml
+  - ./compose/dashboard.yml
 
 networks:
   pihub:

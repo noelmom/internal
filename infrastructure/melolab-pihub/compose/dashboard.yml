@@ -1,0 +1,11 @@
+services:
+  dashboard:
+    image: nginx:alpine
+    container_name: dashboard
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    volumes:
+      - ../services/dashboard:/usr/share/nginx/html:ro
+    networks:
+      - pihub
