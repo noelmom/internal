@@ -6,80 +6,128 @@
 <title>Birdview - fleet dashboard</title>
 <style>
   :root {
-    --bg:#141413; --surface:#1b1b1a; --surface-2:#242423; --border:#3a3a38;
-    --border-strong:#5f5e5a; --text:#eceae3; --muted:#888780; --ok:#639922;
+    --bg:#141413; --surface-1:#242423; --surface-2:#1b1b1a; --border:#3a3a38;
+    --border-strong:#5f5e5a; --text:#eceae3; --text-2:#b4b2a9; --muted:#888780;
+    --ok:#639922; --blue:#378ADD; --mono:ui-monospace,Menlo,monospace;
   }
   * { box-sizing:border-box; }
   html,body { margin:0; height:100%; }
-  body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); display:flex; flex-direction:column; height:100vh; }
-  header { display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:0.5px solid var(--border); flex:0 0 auto; }
-  header .dot { width:9px; height:9px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok); }
-  header h1 { font-size:15px; font-weight:600; margin:0; letter-spacing:.2px; }
-  header .tag { font-size:12px; color:var(--muted); }
-  header .spacer { margin-left:auto; }
-  header a.btn { font-size:12px; color:var(--muted); text-decoration:none; border:0.5px solid var(--border-strong); border-radius:8px; padding:5px 11px; }
-  header a.btn:hover { color:var(--text); border-color:var(--text); }
-  .grid { flex:1 1 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:16px; padding:16px; overflow:auto; }
-  .tile { border:0.5px solid var(--border); border-radius:12px; overflow:hidden; background:var(--surface); display:flex; flex-direction:column; min-height:68vh; }
-  .tile .bar { display:flex; align-items:center; gap:8px; padding:9px 13px; border-bottom:0.5px solid var(--border); font-size:13px; flex:0 0 auto; }
-  .tile .bar .dot { width:7px; height:7px; border-radius:50%; background:var(--ok); }
-  .tile .bar strong { font-weight:600; }
-  .tile .bar .sub { color:var(--muted); font-size:11.5px; }
-  .tile .bar .badge { font-size:10px; color:var(--muted); border:0.5px solid var(--border-strong); border-radius:99px; padding:2px 8px; }
-  .tile .bar .exp { margin-left:auto; cursor:pointer; background:transparent; border:0; color:var(--muted); font-size:15px; line-height:1; padding:3px 6px; border-radius:6px; }
-  .tile .bar .exp:hover { color:var(--text); background:var(--surface-2); }
-  .tile iframe { flex:1 1 auto; width:100%; border:0; background:#000; }
-  .tile.full { position:fixed; inset:0; z-index:50; border-radius:0; min-height:0; }
-  .hint { padding:9px 18px; font-size:11.5px; color:var(--muted); border-top:0.5px solid var(--border); flex:0 0 auto; }
+  body { font-family:system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  .wrap { max-width:1120px; margin:2rem auto; padding:0 1.25rem; }
+  .panel { border:0.5px solid var(--border); border-radius:12px; overflow:hidden; background:var(--surface-2); }
+  .panel-head { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:0.5px solid var(--border); }
+  .panel-head .title { font-size:15px; font-weight:600; }
+  .pill { font-size:12px; color:var(--text-2); background:var(--surface-1); padding:3px 10px; border-radius:99px; }
+  .run { margin-left:auto; font-size:13px; color:var(--text-2); display:flex; align-items:center; gap:6px; }
+  .run .dot { width:8px; height:8px; border-radius:50%; background:var(--ok); box-shadow:0 0 7px var(--ok); }
+  .btn { font:inherit; font-size:13px; background:transparent; color:var(--text-2); border:0.5px solid var(--border-strong); border-radius:8px; padding:6px 12px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+  .btn:hover { color:var(--text); border-color:var(--text); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; padding:16px; }
+  .card { border:0.5px solid var(--border); border-radius:10px; overflow:hidden; cursor:pointer; background:var(--surface-1); transition:transform .08s, border-color .12s; }
+  .card:hover { transform:translateY(-2px); border-color:var(--border-strong); }
+  .card .preview { height:140px; position:relative; overflow:hidden; }
+  .card .preview .ov { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--text); background:rgba(20,20,19,.55); opacity:0; transition:opacity .12s; }
+  .card:hover .preview .ov { opacity:1; }
+  .preview.term { background:#2C2C2A; padding:10px 12px; font-family:var(--mono); font-size:9px; line-height:1.7; color:#D3D1C7; }
+  .preview.term .g { color:#9FE1CB; }
+  .preview.term .d { color:#888780; }
+  .cursor { display:inline-block; width:6px; height:11px; background:#9FE1CB; vertical-align:-1px; }
+  .preview.desk { background:#3b4252; }
+  .preview.desk .win { position:absolute; top:16px; left:14px; width:60%; height:82px; background:#e5e9f0; border-radius:4px; overflow:hidden; }
+  .preview.desk .win .tb { height:14px; background:#d8dee9; }
+  .preview.desk .win .ln { height:5px; background:#cdd3df; border-radius:2px; margin:7px 8px 0; }
+  .preview.desk .bar { position:absolute; left:0; right:0; bottom:0; height:16px; background:rgba(0,0,0,.35); }
+  .card .foot { display:flex; align-items:center; gap:8px; padding:8px 11px; background:var(--surface-2); border-top:0.5px solid var(--border); }
+  .card .foot .dot { width:7px; height:7px; border-radius:50%; background:var(--ok); }
+  .card .foot .nm { font-size:13px; font-weight:500; }
+  .card .foot .sub { font-size:11px; color:var(--muted); }
+  .card .foot .badge { margin-left:auto; font-size:10px; color:var(--muted); border:0.5px solid var(--border-strong); border-radius:99px; padding:2px 8px; }
+  a.card.empty { border:1px dashed var(--border-strong); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--muted); min-height:198px; background:transparent; }
+  a.card.empty:hover { transform:none; color:var(--text); border-color:var(--text); }
+  a.card.empty .plus { font-size:24px; }
+  #detail { position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column; z-index:40; }
+  #detail.show { display:flex; }
+  .dhead { display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:0.5px solid var(--border); }
+  .dhead .nm { font-size:14px; font-weight:600; }
+  .dhead .dot { width:7px; height:7px; border-radius:50%; background:var(--ok); }
+  .dhead .sub { font-size:12px; color:var(--muted); }
+  .dhead .acts { margin-left:auto; display:flex; gap:6px; }
+  #dframe { flex:1; width:100%; border:0; background:#000; }
 </style>
 </head>
 <body>
-<header>
-  <span class="dot"></span>
-  <h1>Birdview</h1>
-  <span class="tag" id="count">fleet dashboard</span>
-  <span class="spacer"></span>
-  <a class="btn" id="guaclink" href="#" target="_blank">Open Guacamole &#8599;</a>
-</header>
-<div class="grid" id="grid"></div>
-<div class="hint">Tiles inherit your Guacamole session &mdash; log in once and they connect automatically. Click the icon to fullscreen a tile (Esc to exit).</div>
+<div class="wrap" id="grid-view">
+  <div class="panel">
+    <div class="panel-head">
+      <span class="title">Birdview</span>
+      <span class="pill">pihub &middot; fleet</span>
+      <span class="run"><span class="dot"></span><span id="run">0 connections</span></span>
+      <a class="btn" id="guaclink" href="#" target="_blank">+ New agent</a>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+<div id="detail">
+  <div class="dhead">
+    <button class="btn" id="back" title="Back">&#8592; Back</button>
+    <span class="nm" id="d-nm"></span>
+    <span class="dot"></span>
+    <span class="sub" id="d-sub"></span>
+    <span class="acts"><button class="btn" id="reload" title="Reconnect">&#10227;</button></span>
+  </div>
+  <iframe id="dframe" allow="clipboard-read; clipboard-write"></iframe>
+</div>
 <script>
   var CONNECTIONS = [
-    { connId: 1, name: "pve",    sub: "root &middot; SSH via Tailscale", proto: "SSH" },
-    { connId: 2, name: "Mac Ai", sub: "mini-ai &middot; macOS desktop",  proto: "VNC" }
+    { connId:1, name:"pve", sub:"root &middot; SSH via Tailscale", proto:"SSH" },
+    { connId:2, name:"Mac Ai", sub:"mini-ai &middot; macOS desktop", proto:"VNC" }
   ];
   var host = location.hostname;
   var guacBase = "http://" + host + ":8080/guacamole/";
-  document.getElementById("guaclink").href = guacBase;
-  function clientId(connId) {
-    var NUL = String.fromCharCode(0);
-    return btoa(connId + NUL + "c" + NUL + "postgresql");
+  var newConnUrl = guacBase + "#/settings/postgresql";
+  document.getElementById("guaclink").href = newConnUrl;
+  function clientId(id){ var N=String.fromCharCode(0); return btoa(id+N+"c"+N+"postgresql"); }
+  function clientUrl(id){ return guacBase + "#/client/" + clientId(id); }
+  function preview(c){
+    if (c.proto === "VNC") {
+      return "<div class=\"preview desk\"><div class=\"win\"><div class=\"tb\"></div><div class=\"ln\" style=\"width:70%\"></div><div class=\"ln\" style=\"width:48%\"></div><div class=\"ln\" style=\"width:60%\"></div></div><div class=\"bar\"></div><div class=\"ov\">Click to open desktop</div></div>";
+    }
+    return "<div class=\"preview term\"><div class=\"d\">tailscale ssh &rarr; " + c.name + "</div><div class=\"g\">connection ready</div><div>&nbsp;</div><div class=\"g\">$ <span class=\"cursor\"></span></div><div class=\"ov\">Click to open shell</div></div>";
   }
   var grid = document.getElementById("grid");
-  CONNECTIONS.forEach(function (c) {
-    var tile = document.createElement("div");
-    tile.className = "tile";
-    tile.innerHTML =
-      "<div class=\"bar\">" +
-        "<span class=\"dot\"></span><strong>" + c.name + "</strong>" +
-        "<span class=\"sub\">" + c.sub + "</span>" +
-        "<span class=\"badge\">" + c.proto + "</span>" +
-        "<button class=\"exp\" title=\"Fullscreen\">&#9974;</button>" +
-      "</div>" +
-      "<iframe allow=\"clipboard-read; clipboard-write\" title=\"" + c.name + "\" " +
-        "src=\"" + guacBase + "#/client/" + clientId(c.connId) + "\"></iframe>";
-    tile.querySelector(".exp").addEventListener("click", function () {
-      var full = tile.classList.toggle("full");
-      this.innerHTML = full ? "&times;" : "&#9974;";
-    });
-    grid.appendChild(tile);
+  CONNECTIONS.forEach(function(c){
+    var card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = preview(c) +
+      "<div class=\"foot\"><span class=\"dot\"></span><span class=\"nm\">" + c.name + "</span>" +
+      "<span class=\"sub\">" + c.sub + "</span><span class=\"badge\">" + c.proto + "</span></div>";
+    card.addEventListener("click", function(){ openConn(c); });
+    grid.appendChild(card);
   });
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") document.querySelectorAll(".tile.full").forEach(function (t) {
-      t.classList.remove("full"); var b = t.querySelector(".exp"); if (b) b.innerHTML = "&#9974;";
-    });
-  });
-  document.getElementById("count").textContent = "fleet dashboard &middot; " + CONNECTIONS.length + " connections";
+  var empty = document.createElement("a");
+  empty.className = "card empty";
+  empty.href = newConnUrl; empty.target = "_blank";
+  empty.innerHTML = "<div class=\"plus\">+</div><div>New agent</div>";
+  grid.appendChild(empty);
+  document.getElementById("run").textContent = CONNECTIONS.length + " connections";
+  var detail = document.getElementById("detail");
+  var dframe = document.getElementById("dframe");
+  var current = null;
+  function openConn(c){
+    current = c;
+    document.getElementById("d-nm").textContent = c.name;
+    document.getElementById("d-sub").innerHTML = c.sub;
+    dframe.src = clientUrl(c.connId);
+    detail.classList.add("show");
+  }
+  function closeConn(){
+    detail.classList.remove("show");
+    dframe.src = "about:blank";
+    current = null;
+  }
+  document.getElementById("back").addEventListener("click", closeConn);
+  document.getElementById("reload").addEventListener("click", function(){ if(current){ dframe.src = clientUrl(current.connId); } });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape" && detail.classList.contains("show")) closeConn(); });
 </script>
 </body>
 </html>
