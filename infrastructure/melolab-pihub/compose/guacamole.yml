@@ -1,0 +1,53 @@
+services:
+  guac-postgres:
+    image: postgres:15-alpine
+    container_name: guac-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${GUAC_DB_NAME}
+      POSTGRES_USER: ${GUAC_DB_USER}
+      POSTGRES_PASSWORD: ${GUAC_DB_PASSWORD}
+    volumes:
+      - ../runtime/guacamole/postgres:/var/lib/postgresql/data
+      - ../runtime/guacamole/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${GUAC_DB_USER} -d ${GUAC_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    networks:
+      - pihub
+
+  guacd:
+    image: guacamole/guacd:1.6.0
+    container_name: guacd
+    restart: unless-stopped
+    volumes:
+      - ../runtime/guacamole/recordings:/recordings
+      - ../runtime/guacamole/drive:/drive
+    networks:
+      - pihub
+
+  guacamole:
+    image: guacamole/guacamole:1.6.0
+    container_name: guacamole
+    restart: unless-stopped
+    depends_on:
+      guac-postgres:
+        condition: service_healthy
+      guacd:
+        condition: service_started
+    environment:
+      GUACD_HOSTNAME: guacd
+      POSTGRESQL_HOSTNAME: guac-postgres
+      POSTGRESQL_DATABASE: ${GUAC_DB_NAME}
+      POSTGRESQL_USERNAME: ${GUAC_DB_USER}
+      POSTGRESQL_PASSWORD: ${GUAC_DB_PASSWORD}
+      RECORDING_SEARCH_PATH: /recordings
+      JAVA_OPTS: "-Xmx512m"
+    ports:
+      - "${GUAC_PORT}:8080"
+    volumes:
+      - ../runtime/guacamole/recordings:/recordings:ro
+    networks:
+      - pihub
