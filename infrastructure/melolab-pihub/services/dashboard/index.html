@@ -66,8 +66,14 @@
   .gutter:hover { background:var(--border-strong); }
   .lay-row > .gutter { width:5px; cursor:col-resize; }
   .lay-col > .gutter { height:5px; cursor:row-resize; }
-  #cheat { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:60; padding:16px; }
-  #cheat.show { display:flex; }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:60; padding:16px; }
+  .modal.show { display:flex; }
+  .pick-card { background:var(--surface-1); border:0.5px solid var(--border-strong); border-radius:12px; width:100%; max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,.55); overflow:hidden; }
+  .pick-head { padding:13px 16px; border-bottom:0.5px solid var(--border); font-size:14px; font-weight:600; }
+  .pick-opts { display:flex; gap:10px; padding:16px; }
+  .pick-opts .opt { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:14px 8px; border:0.5px solid var(--border-strong); border-radius:10px; background:var(--surface-2); color:var(--text); cursor:pointer; font-size:13px; font-weight:500; }
+  .pick-opts .opt:hover { border-color:var(--text); background:var(--surface-1); }
+  .pick-opts .opt small { color:var(--muted); font-weight:400; font-size:10.5px; }
   .cheat-card { background:var(--surface-1); border:0.5px solid var(--border-strong); border-radius:12px; max-width:660px; width:100%; max-height:86vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,.55); }
   .cheat-head { display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:0.5px solid var(--border); position:sticky; top:0; background:var(--surface-1); }
   .cheat-head strong { font-size:14px; }
@@ -101,15 +107,26 @@
     <span class="dot"></span>
     <span class="sub" id="d-sub"></span>
     <span class="acts">
+      <button class="btn" id="add-desktop" title="Add desktop">+ Desktop</button>
+      <button class="btn" id="add-shell" title="Add SSH shell">+ Shell</button>
       <button class="btn" id="lay-row" title="Side by side">Cols</button>
       <button class="btn" id="lay-col" title="Stacked">Rows</button>
-      <button class="btn" id="add-shell" title="Add SSH shell">+ Shell</button>
       <button class="btn" id="cheat-btn" title="tmux cheatsheet">? Cheatsheet</button>
     </span>
   </div>
   <div id="dbody" class="lay-row"></div>
 </div>
-<div id="cheat">
+<div id="picker" class="modal">
+  <div class="pick-card">
+    <div class="pick-head">Connect to <span id="pick-nm"></span></div>
+    <div class="pick-opts">
+      <div class="opt" id="pick-both">Both<small>desktop + terminal</small></div>
+      <div class="opt" id="pick-vnc">Desktop<small>VNC</small></div>
+      <div class="opt" id="pick-ssh">Terminal<small>SSH</small></div>
+    </div>
+  </div>
+</div>
+<div id="cheat" class="modal">
   <div class="cheat-card">
     <div class="cheat-head"><strong>tmux cheatsheet</strong><span class="pfx">prefix = Ctrl-b (press, release, then the key)</span><button class="btn" id="cheat-close">&times;</button></div>
     <div class="cheat-body">
@@ -123,7 +140,6 @@
         <div class="row"><kbd>prefix</kbd><kbd>c</kbd><span class="desc">new window</span></div>
         <div class="row"><kbd>prefix</kbd><kbd>n</kbd> <kbd>p</kbd><span class="desc">next / previous</span></div>
         <div class="row"><kbd>prefix</kbd><kbd>0</kbd>&ndash;<kbd>9</kbd><span class="desc">go to window N</span></div>
-        <div class="row"><kbd>prefix</kbd><kbd>,</kbd><span class="desc">rename window</span></div>
         <div class="row"><kbd>prefix</kbd><kbd>w</kbd><span class="desc">window list</span></div>
       </div>
       <div>
@@ -135,7 +151,6 @@
         <div class="row"><kbd>prefix</kbd><kbd>x</kbd><span class="desc">close pane</span></div>
         <h4>Scroll &amp; copy</h4>
         <div class="row"><kbd>prefix</kbd><kbd>[</kbd><span class="desc">scroll mode (<kbd>q</kbd> exits)</span></div>
-        <div class="row"><kbd>prefix</kbd><kbd>]</kbd><span class="desc">paste</span></div>
         <h4>Help</h4>
         <div class="row"><kbd>prefix</kbd><kbd>?</kbd><span class="desc">all key bindings</span></div>
         <div class="row"><kbd>prefix</kbd><kbd>:</kbd><span class="desc">command prompt</span></div>
@@ -147,7 +162,7 @@
   var NODES = [
     { name:"pve",    sub:"root &middot; SSH via Tailscale", ssh:1 },
     { name:"Mac Ai", sub:"mini-ai &middot; macOS",          vnc:2, ssh:3 },
-    { name:"pihub",  sub:"control hub &middot; SSH",     ssh:4 }
+    { name:"pihub",  sub:"control hub &middot; SSH",        ssh:4 }
   ];
   var host = location.hostname;
   var guacBase = "http://" + host + ":8080/guacamole/";
@@ -159,7 +174,7 @@
   function preview(n){
     if (n.vnc) {
       var t = n.ssh ? "<div class=\"term2\"><div style=\"color:#88c0d0\">tmux: agent</div><div>&gt; working&hellip;</div></div>" : "";
-      return "<div class=\"preview desk\"><div class=\"win\"><div class=\"tb\"></div><div class=\"ln\" style=\"width:70%\"></div><div class=\"ln\" style=\"width:48%\"></div><div class=\"ln\" style=\"width:60%\"></div></div>" + t + "<div class=\"bar\"></div><div class=\"ov\">" + (n.ssh?"Click: desktop + terminal":"Click to open desktop") + "</div></div>";
+      return "<div class=\"preview desk\"><div class=\"win\"><div class=\"tb\"></div><div class=\"ln\" style=\"width:70%\"></div><div class=\"ln\" style=\"width:48%\"></div><div class=\"ln\" style=\"width:60%\"></div></div>" + t + "<div class=\"bar\"></div><div class=\"ov\">" + (n.ssh?"Click: pick desktop / terminal / both":"Click to open desktop") + "</div></div>";
     }
     return "<div class=\"preview term\"><div class=\"d\">tailscale ssh &rarr; " + n.name + "</div><div class=\"g\">connection ready</div><div>&nbsp;</div><div class=\"g\">$ <span class=\"cursor\"></span></div><div class=\"ov\">Click to open shell</div></div>";
   }
@@ -173,24 +188,31 @@
   var empty = document.createElement("a"); empty.className="card empty"; empty.href=adminUrl; empty.target="_blank";
   empty.innerHTML = "<div class=\"plus\">+</div><div>New agent</div>"; grid.appendChild(empty);
   document.getElementById("run").textContent = NODES.length + " nodes";
+
   var detail = document.getElementById("detail");
   var dbody = document.getElementById("dbody");
   var node = null, shellN = 0;
   function makePane(type, connId, label){
-    var el = document.createElement("div"); el.className = "pane"; el.style.flexGrow = "1";
+    var el = document.createElement("div"); el.className = "pane"; el.style.flexGrow = "1"; el.dataset.type = type;
     var cls = type==="vnc" ? "live" : "inter", tag = type==="vnc" ? "live" : "interactive";
     el.innerHTML = "<div class=\"plabel\"><span>" + label + "</span><span class=\"" + cls + "\">" + tag + "</span><button class=\"pclose\" title=\"Close pane\">&times;</button></div><iframe allow=\"clipboard-read; clipboard-write\" src=\"" + clientUrl(connId) + "\"></iframe>";
     el.querySelector(".pclose").addEventListener("click", function(){ removePane(el); });
     return el;
   }
   function makeGutter(){ var g = document.createElement("div"); g.className = "gutter"; g.addEventListener("pointerdown", function(e){ startDrag(g, e); }); return g; }
-  function addPane(type, connId, label){ if (dbody.children.length > 0) dbody.appendChild(makeGutter()); dbody.appendChild(makePane(type, connId, label)); }
+  function addPane(type, connId, label){ if (dbody.children.length > 0) dbody.appendChild(makeGutter()); dbody.appendChild(makePane(type, connId, label)); updateButtons(); }
   function removePane(el){
     var sib = el.previousElementSibling;
     if (sib && sib.classList.contains("gutter")) sib.remove();
     else { var n2 = el.nextElementSibling; if (n2 && n2.classList.contains("gutter")) n2.remove(); }
     el.remove();
-    if (dbody.querySelectorAll(".pane").length === 0) closeNode();
+    if (dbody.querySelectorAll(".pane").length === 0) closeNode(); else updateButtons();
+  }
+  function hasVnc(){ return !!dbody.querySelector(".pane[data-type=vnc]"); }
+  function updateButtons(){
+    var ad = document.getElementById("add-desktop"), as = document.getElementById("add-shell");
+    ad.style.display = (node && node.vnc && !hasVnc()) ? "" : "none";
+    as.style.display = (node && node.ssh) ? "" : "none";
   }
   function startDrag(g, e){
     var prev = g.previousElementSibling, next = g.nextElementSibling;
@@ -211,28 +233,41 @@
     document.getElementById("lay-col").classList.toggle("on", l === "col");
     dbody.querySelectorAll(".pane").forEach(function(p){ p.style.flexGrow = "1"; });
   }
-  function openNode(n){
+  function startSession(n, types){
     node = n; shellN = 0;
     document.getElementById("d-nm").textContent = n.name;
     document.getElementById("d-sub").innerHTML = n.sub;
     dbody.innerHTML = ""; setLayout("row");
-    if (n.vnc) addPane("vnc", n.vnc, "Desktop &middot; VNC");
-    if (n.ssh) { shellN = 1; addPane("ssh", n.ssh, "Terminal &middot; SSH"); }
-    document.getElementById("add-shell").style.display = n.ssh ? "" : "none";
+    types.forEach(function(t){
+      if (t === "vnc" && n.vnc) addPane("vnc", n.vnc, "Desktop &middot; VNC");
+      if (t === "ssh" && n.ssh) { shellN++; addPane("ssh", n.ssh, "Terminal &middot; SSH"); }
+    });
+    updateButtons();
     detail.classList.add("show");
   }
+  var picker = document.getElementById("picker"), pickNode = null;
+  function openNode(n){
+    if (n.vnc && n.ssh) { pickNode = n; document.getElementById("pick-nm").textContent = n.name; picker.classList.add("show"); }
+    else startSession(n, [ n.vnc ? "vnc" : "ssh" ]);
+  }
+  document.getElementById("pick-both").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["vnc","ssh"]); });
+  document.getElementById("pick-vnc").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["vnc"]); });
+  document.getElementById("pick-ssh").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["ssh"]); });
+  picker.addEventListener("click", function(e){ if (e.target === picker) picker.classList.remove("show"); });
   function closeNode(){ detail.classList.remove("show"); dbody.innerHTML = ""; node = null; }
   document.getElementById("back").addEventListener("click", closeNode);
   document.getElementById("lay-row").addEventListener("click", function(){ setLayout("row"); });
   document.getElementById("lay-col").addEventListener("click", function(){ setLayout("col"); });
   document.getElementById("add-shell").addEventListener("click", function(){ if (!node || !node.ssh) return; shellN++; addPane("ssh", node.ssh, "Shell " + shellN + " &middot; SSH"); });
+  document.getElementById("add-desktop").addEventListener("click", function(){ if (!node || !node.vnc || hasVnc()) return; addPane("vnc", node.vnc, "Desktop &middot; VNC"); });
   var cheat = document.getElementById("cheat");
   document.getElementById("cheat-btn").addEventListener("click", function(){ cheat.classList.add("show"); });
   document.getElementById("cheat-close").addEventListener("click", function(){ cheat.classList.remove("show"); });
   cheat.addEventListener("click", function(e){ if (e.target === cheat) cheat.classList.remove("show"); });
   document.addEventListener("keydown", function(e){
     if (e.key !== "Escape") return;
-    if (cheat.classList.contains("show")) cheat.classList.remove("show");
+    if (picker.classList.contains("show")) picker.classList.remove("show");
+    else if (cheat.classList.contains("show")) cheat.classList.remove("show");
     else if (detail.classList.contains("show")) closeNode();
   });
 </script>
