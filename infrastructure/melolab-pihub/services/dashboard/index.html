@@ -37,11 +37,13 @@
   .preview.desk .win .tb { height:14px; background:#d8dee9; }
   .preview.desk .win .ln { height:5px; background:#cdd3df; border-radius:2px; margin:7px 8px 0; }
   .preview.desk .bar { position:absolute; left:0; right:0; bottom:0; height:16px; background:rgba(0,0,0,.35); }
+  .preview.desk .term2 { position:absolute; right:12px; bottom:30px; width:46%; height:64px; background:#2e3440; border-radius:4px; padding:5px 7px; font-family:var(--mono); font-size:8px; line-height:1.5; color:#a3be8c; }
   .card .foot { display:flex; align-items:center; gap:8px; padding:8px 11px; background:var(--surface-2); border-top:0.5px solid var(--border); }
   .card .foot .dot { width:7px; height:7px; border-radius:50%; background:var(--ok); }
   .card .foot .nm { font-size:13px; font-weight:500; }
   .card .foot .sub { font-size:11px; color:var(--muted); }
-  .card .foot .badge { margin-left:auto; font-size:10px; color:var(--muted); border:0.5px solid var(--border-strong); border-radius:99px; padding:2px 8px; }
+  .card .foot .badges { margin-left:auto; display:flex; gap:5px; }
+  .card .foot .badge { font-size:10px; color:var(--muted); border:0.5px solid var(--border-strong); border-radius:99px; padding:2px 8px; }
   a.card.empty { border:1px dashed var(--border-strong); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--muted); min-height:198px; background:transparent; }
   a.card.empty:hover { transform:none; color:var(--text); border-color:var(--text); }
   a.card.empty .plus { font-size:24px; }
@@ -52,7 +54,15 @@
   .dhead .dot { width:7px; height:7px; border-radius:50%; background:var(--ok); }
   .dhead .sub { font-size:12px; color:var(--muted); }
   .dhead .acts { margin-left:auto; display:flex; gap:6px; }
-  #dframe { flex:1; width:100%; border:0; background:#000; }
+  #dbody { flex:1; display:grid; grid-template-columns:1fr; min-height:0; }
+  #dbody.split { grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); }
+  @media (max-width:820px){ #dbody.split { grid-template-columns:1fr; grid-template-rows:1fr 1fr; } }
+  .pane { display:flex; flex-direction:column; min-width:0; min-height:0; border-right:0.5px solid var(--border); }
+  .pane:last-child { border-right:0; }
+  .pane .plabel { font-size:11px; color:var(--muted); padding:6px 12px; border-bottom:0.5px solid var(--border); display:flex; align-items:center; gap:6px; }
+  .pane .plabel .live { margin-left:auto; color:var(--ok); }
+  .pane .plabel .inter { margin-left:auto; color:var(--blue); }
+  .pane iframe { flex:1; width:100%; border:0; background:#000; min-height:0; }
 </style>
 </head>
 <body>
@@ -61,7 +71,7 @@
     <div class="panel-head">
       <span class="title">Birdview</span>
       <span class="pill">pihub &middot; fleet</span>
-      <span class="run"><span class="dot"></span><span id="run">0 connections</span></span>
+      <span class="run"><span class="dot"></span><span id="run">0 nodes</span></span>
       <a class="btn" id="guaclink" href="#" target="_blank">+ New agent</a>
     </div>
     <div class="grid" id="grid"></div>
@@ -75,59 +85,77 @@
     <span class="sub" id="d-sub"></span>
     <span class="acts"><button class="btn" id="reload" title="Reconnect">&#10227;</button></span>
   </div>
-  <iframe id="dframe" allow="clipboard-read; clipboard-write"></iframe>
+  <div id="dbody"></div>
 </div>
 <script>
-  var CONNECTIONS = [
-    { connId:1, name:"pve", sub:"root &middot; SSH via Tailscale", proto:"SSH" },
-    { connId:2, name:"Mac Ai", sub:"mini-ai &middot; macOS desktop", proto:"VNC" }
+  // A node is a fleet machine. It can expose vnc, ssh, or BOTH (-> split view).
+  // vnc/ssh values are guacamole_connection.connection_id.
+  var NODES = [
+    { name:"pve",    sub:"root &middot; SSH via Tailscale", ssh:1 },
+    { name:"Mac Ai", sub:"mini-ai &middot; macOS",          vnc:2 }
+    // both-node example (renders split view):
+    // { name:"hermes-01", sub:"agent VM", vnc:3, ssh:4 }
   ];
   var host = location.hostname;
   var guacBase = "http://" + host + ":8080/guacamole/";
-  var newConnUrl = guacBase + "#/settings/postgresql";
-  document.getElementById("guaclink").href = newConnUrl;
+  var adminUrl = guacBase + "#/settings/postgresql";
+  document.getElementById("guaclink").href = adminUrl;
   function clientId(id){ var N=String.fromCharCode(0); return btoa(id+N+"c"+N+"postgresql"); }
   function clientUrl(id){ return guacBase + "#/client/" + clientId(id); }
-  function preview(c){
-    if (c.proto === "VNC") {
-      return "<div class=\"preview desk\"><div class=\"win\"><div class=\"tb\"></div><div class=\"ln\" style=\"width:70%\"></div><div class=\"ln\" style=\"width:48%\"></div><div class=\"ln\" style=\"width:60%\"></div></div><div class=\"bar\"></div><div class=\"ov\">Click to open desktop</div></div>";
+  function badges(n){
+    var b = "";
+    if (n.vnc) b += "<span class=\"badge\">VNC</span>";
+    if (n.ssh) b += "<span class=\"badge\">SSH</span>";
+    return b;
+  }
+  function preview(n){
+    if (n.vnc) {
+      var term = n.ssh ? "<div class=\"term2\"><div style=\"color:#88c0d0\">tmux: agent</div><div>&gt; working&hellip;</div></div>" : "";
+      return "<div class=\"preview desk\"><div class=\"win\"><div class=\"tb\"></div><div class=\"ln\" style=\"width:70%\"></div><div class=\"ln\" style=\"width:48%\"></div><div class=\"ln\" style=\"width:60%\"></div></div>" + term + "<div class=\"bar\"></div><div class=\"ov\">" + (n.ssh ? "Click for desktop + terminal" : "Click to open desktop") + "</div></div>";
     }
-    return "<div class=\"preview term\"><div class=\"d\">tailscale ssh &rarr; " + c.name + "</div><div class=\"g\">connection ready</div><div>&nbsp;</div><div class=\"g\">$ <span class=\"cursor\"></span></div><div class=\"ov\">Click to open shell</div></div>";
+    return "<div class=\"preview term\"><div class=\"d\">tailscale ssh &rarr; " + n.name + "</div><div class=\"g\">connection ready</div><div>&nbsp;</div><div class=\"g\">$ <span class=\"cursor\"></span></div><div class=\"ov\">Click to open shell</div></div>";
   }
   var grid = document.getElementById("grid");
-  CONNECTIONS.forEach(function(c){
+  NODES.forEach(function(n){
     var card = document.createElement("div");
     card.className = "card";
-    card.innerHTML = preview(c) +
-      "<div class=\"foot\"><span class=\"dot\"></span><span class=\"nm\">" + c.name + "</span>" +
-      "<span class=\"sub\">" + c.sub + "</span><span class=\"badge\">" + c.proto + "</span></div>";
-    card.addEventListener("click", function(){ openConn(c); });
+    card.innerHTML = preview(n) +
+      "<div class=\"foot\"><span class=\"dot\"></span><span class=\"nm\">" + n.name + "</span>" +
+      "<span class=\"sub\">" + n.sub + "</span><span class=\"badges\">" + badges(n) + "</span></div>";
+    card.addEventListener("click", function(){ openNode(n); });
     grid.appendChild(card);
   });
   var empty = document.createElement("a");
-  empty.className = "card empty";
-  empty.href = newConnUrl; empty.target = "_blank";
+  empty.className = "card empty"; empty.href = adminUrl; empty.target = "_blank";
   empty.innerHTML = "<div class=\"plus\">+</div><div>New agent</div>";
   grid.appendChild(empty);
-  document.getElementById("run").textContent = CONNECTIONS.length + " connections";
+  document.getElementById("run").textContent = NODES.length + " nodes";
   var detail = document.getElementById("detail");
-  var dframe = document.getElementById("dframe");
+  var dbody = document.getElementById("dbody");
   var current = null;
-  function openConn(c){
-    current = c;
-    document.getElementById("d-nm").textContent = c.name;
-    document.getElementById("d-sub").innerHTML = c.sub;
-    dframe.src = clientUrl(c.connId);
+  function pane(label, tag, tagClass, connId){
+    return "<div class=\"pane\"><div class=\"plabel\">" + label +
+      "<span class=\"" + tagClass + "\">" + tag + "</span></div>" +
+      "<iframe allow=\"clipboard-read; clipboard-write\" src=\"" + clientUrl(connId) + "\"></iframe></div>";
+  }
+  function openNode(n){
+    current = n;
+    document.getElementById("d-nm").textContent = n.name;
+    document.getElementById("d-sub").innerHTML = n.sub;
+    if (n.vnc && n.ssh) {
+      dbody.className = "split";
+      dbody.innerHTML = pane("Desktop &middot; VNC", "live", "live", n.vnc) +
+                        pane("Terminal &middot; SSH", "interactive", "inter", n.ssh);
+    } else {
+      dbody.className = "";
+      dbody.innerHTML = "<iframe allow=\"clipboard-read; clipboard-write\" style=\"width:100%;height:100%;border:0;background:#000\" src=\"" + clientUrl(n.vnc || n.ssh) + "\"></iframe>";
+    }
     detail.classList.add("show");
   }
-  function closeConn(){
-    detail.classList.remove("show");
-    dframe.src = "about:blank";
-    current = null;
-  }
-  document.getElementById("back").addEventListener("click", closeConn);
-  document.getElementById("reload").addEventListener("click", function(){ if(current){ dframe.src = clientUrl(current.connId); } });
-  document.addEventListener("keydown", function(e){ if(e.key === "Escape" && detail.classList.contains("show")) closeConn(); });
+  function closeNode(){ detail.classList.remove("show"); dbody.innerHTML = ""; current = null; }
+  document.getElementById("back").addEventListener("click", closeNode);
+  document.getElementById("reload").addEventListener("click", function(){ if(current) openNode(current); });
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape" && detail.classList.contains("show")) closeNode(); });
 </script>
 </body>
 </html>
