@@ -91,6 +91,15 @@
       if (term.hasSelection()) copyText(term.getSelection());
       return false;
     }
+    // Ctrl+V: paste text instead of sending raw ^V (which apps like Claude Code
+    // treat as "paste image" -> "no image found in clipboard"). Cmd+V falls
+    // through to xterm's native paste (works in Safari, no clipboard permission).
+    if (e.ctrlKey && !e.metaKey && k === "v") {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        navigator.clipboard.readText().then(function(t){ if (t) term.paste(t); }).catch(function(){});
+      }
+      return false;
+    }
     return true;
   });
   var ctrl = false;
