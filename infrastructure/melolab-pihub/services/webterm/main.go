@@ -235,6 +235,7 @@ func main() {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(b)
 	})
+	http.Handle("/novnc/", http.StripPrefix("/novnc/", http.FileServer(http.Dir(env("NOVNC_DIR", "/novnc")))))
 	http.HandleFunc("/vncws", handleVNC)
 	http.HandleFunc("/ws", handleWS)
 	log.Println("webterm listening on :8091")

@@ -83,7 +83,11 @@ dropping guacd's server-side raster for VNC), mirroring what it does for SSH:
   upgrader advertises the `binary` subprotocol that noVNC requests. Targets are
   a simple `name -> host:port` map in `vnc-targets.json` (`VNC_TARGETS_PATH`).
 - **Tile `/vnc.html?t=<name>`** (`VNC_INDEX_PATH`): loads noVNC (`@novnc/novnc`
-  `lib/rfb.js` from jsdelivr as an ES module) and points its RFB at `/vncws`.
+  self-hosted from `services/webterm/novnc/` and served at `/webterm/novnc/`)
+  and points its RFB at `/vncws`. noVNC is vendored, not from a CDN: the npm
+  package ships a CommonJS build (no ESM default export) and esm.sh can't
+  bundle it (top-level await), so we serve noVNC's native `core/` ES modules
+  (+ `vendor/pako`) directly via a Go `http.FileServer` (`NOVNC_DIR`).
   `scaleViewport` on. Served through the dashboard nginx at
   `https://pihub...:8090/webterm/vnc.html?t=<name>` (the existing `/webterm/`
   proxy already forwards `/vncws` with WS upgrade - no nginx change needed).
