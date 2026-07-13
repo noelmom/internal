@@ -58,8 +58,17 @@ fi
 
 ## Font
 
-xterm.js uses `'CaskaydiaCove Nerd Font'` (size 12) with a mono +
-system fallback chain. Nerd-Font PUA glyphs render only on devices that have the
-font installed; other devices fall back to the system mono font and (post
--locale-fix) system emoji fonts. If PUA icons are ever needed on a device
-without the font (e.g. iPad), embed the woff2 via `@font-face` served by nginx.
+xterm.js uses `'CaskaydiaCove Nerd Font'` at size 12. The font is **self-hosted**
+(no device install required, so it works on iPad too): `font.woff2` in this dir
+(CaskaydiaCove Nerd Font Mono, converted from the Nerd Fonts CascadiaCode v3.2.1
+release with `woff2_compress`, ~1 MB) is mounted into the container (`FONT_PATH`)
+and served by the Go server at `/font.woff2` with a long `Cache-Control`. nginx
+proxies it at `/webterm/font.woff2`. `index.html` declares it via `@font-face`
+with `local('CaskaydiaCove Nerd Font'), local(... Mono)` first, so a device that
+already has the font skips the download and only others fetch the woff2. After
+the web font loads, `document.fonts.load(...)` triggers a `fit()` refit so the
+xterm.js cell grid is measured against the real font, not the fallback.
+
+To regenerate the woff2: download the Nerd Fonts `CascadiaCode.zip` release,
+`woff2_compress CaskaydiaCoveNerdFontMono-Regular.ttf`, drop the result in as
+`font.woff2`.

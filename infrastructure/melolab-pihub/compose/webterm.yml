@@ -10,9 +10,11 @@ services:
       SSH_KEY: "/key"
       TARGETS_PATH: "/targets.json"
       INDEX_PATH: "/www/index.html"
+      FONT_PATH: "/font.woff2"
     volumes:
       - ../runtime/webterm/key:/key:ro
       - ../services/webterm/index.html:/www/index.html:ro
       - ../services/webterm/targets.json:/targets.json:ro
+      - ../services/webterm/font.woff2:/font.woff2:ro
     networks:
       - pihub

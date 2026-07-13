@@ -151,6 +151,16 @@ func main() {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(b)
 	})
+	http.HandleFunc("/font.woff2", func(w http.ResponseWriter, r *http.Request) {
+		b, err := os.ReadFile(env("FONT_PATH", "/font.woff2"))
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "font/woff2")
+		w.Header().Set("Cache-Control", "public, max-age=604800")
+		w.Write(b)
+	})
 	http.HandleFunc("/ws", handleWS)
 	log.Println("webterm listening on :8091")
 	log.Fatal(http.ListenAndServe(":8091", nil))
