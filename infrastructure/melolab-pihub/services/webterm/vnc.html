@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vnc</title>
+<style>
+  html,body { margin:0; height:100%; background:#141413; overflow:hidden; }
+  #screen { width:100%; height:100%; }
+  #msg { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; color:#eceae3; font:14px ui-monospace,Menlo,monospace; background:#141413; text-align:center; padding:0 16px; }
+</style>
+</head>
+<body>
+<div id="screen"></div>
+<div id="msg">connecting...</div>
+<script type="module">
+  import RFB from "https://cdn.jsdelivr.net/npm/@novnc/novnc@1.6.0/lib/rfb.js";
+  var params = new URLSearchParams(location.search);
+  var target = params.get("t") || "";
+  var proto = location.protocol === "https:" ? "wss" : "ws";
+  var base = location.pathname.replace(/[^/]*$/, "");
+  var url = proto + "://" + location.host + base + "vncws?t=" + encodeURIComponent(target);
+  var msg = document.getElementById("msg");
+  function showMsg(t){ msg.textContent = t; msg.style.display = "flex"; }
+  function hideMsg(){ msg.style.display = "none"; }
+  var rfb;
+  try {
+    rfb = new RFB(document.getElementById("screen"), url, {});
+  } catch (e) { showMsg("init error: " + e.message); }
+  if (rfb) {
+    rfb.scaleViewport = true;
+    rfb.resizeSession = false;
+    rfb.background = "#141413";
+    rfb.addEventListener("connect", hideMsg);
+    rfb.addEventListener("credentialsrequired", function(e){
+      var types = (e.detail && e.detail.types) || ["password"];
+      var creds = {};
+      if (types.indexOf("username") !== -1) creds.username = prompt("Username for " + target) || "";
+      if (types.indexOf("password") !== -1) creds.password = prompt("Password for " + target) || "";
+      if (types.indexOf("target") !== -1) creds.target = prompt("Target for " + target) || "";
+      rfb.sendCredentials(creds);
+    });
+    rfb.addEventListener("securityfailure", function(e){
+      showMsg("auth failed: " + (e.detail && e.detail.reason ? e.detail.reason : ""));
+    });
+    rfb.addEventListener("disconnect", function(e){
+      showMsg("[disconnected" + (e.detail && e.detail.clean ? "" : " - connection lost") + "]");
+    });
+  }
+</script>
+</body>
+</html>

@@ -72,3 +72,31 @@ xterm.js cell grid is measured against the real font, not the fallback.
 To regenerate the woff2: download the Nerd Fonts `CascadiaCode.zip` release,
 `woff2_compress CaskaydiaCoveNerdFontMono-Regular.ttf`, drop the result in as
 `font.woff2`.
+
+## VNC (noVNC + WebSocket-to-TCP proxy)
+
+The same Go service also fronts **client-side VNC** (the roadmap step toward
+dropping guacd's server-side raster for VNC), mirroring what it does for SSH:
+
+- **Proxy route `/vncws?t=<name>`** (`handleVNC` in `main.go`): upgrades the
+  browser WebSocket and pumps bytes straight to/from a raw TCP VNC server. The
+  upgrader advertises the `binary` subprotocol that noVNC requests. Targets are
+  a simple `name -> host:port` map in `vnc-targets.json` (`VNC_TARGETS_PATH`).
+- **Tile `/vnc.html?t=<name>`** (`VNC_INDEX_PATH`): loads noVNC (`@novnc/novnc`
+  `lib/rfb.js` from jsdelivr as an ES module) and points its RFB at `/vncws`.
+  `scaleViewport` on. Served through the dashboard nginx at
+  `https://pihub...:8090/webterm/vnc.html?t=<name>` (the existing `/webterm/`
+  proxy already forwards `/vncws` with WS upgrade - no nginx change needed).
+
+Targets are the Macs' Screen Sharing (`mini`, `vox` on `:5900`). They speak
+**Apple Remote Desktop auth** (RFB banner `RFB 003.889`, security type 30 =
+Diffie-Hellman), so noVNC asks for **username + password** (the macOS login),
+not a legacy VNC password - the tile prompts for whatever `credentialsrequired`
+reports. A plain-VNC host would just prompt for a password.
+
+Verify the proxy end to end (a live VNC server sends its banner on connect):
+open a WS to `/vncws?t=mini` and the first binary frame is `RFB 003.889`.
+
+**Not done yet:** auth in front of the proxy (same gap as the SSH side), and
+dashboard tile integration. `noVNC` renders client-side, so this path is
+immune to the guacd font/emoji limits.

@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/ssh"
@@ -25,8 +27,9 @@ func env(k, d string) string {
 }
 
 var (
-	upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
-	targets  = map[string]Target{}
+	upgrader   = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }, Subprotocols: []string{"binary"}}
+	targets    = map[string]Target{}
+	vncTargets = map[string]string{}
 )
 
 func loadTargets() {
@@ -39,6 +42,67 @@ func loadTargets() {
 		log.Println("targets parse error:", err)
 	}
 	log.Printf("loaded %d targets", len(targets))
+}
+
+func loadVNCTargets() {
+	b, err := os.ReadFile(env("VNC_TARGETS_PATH", "/vnc-targets.json"))
+	if err != nil {
+		log.Println("vnc targets load error:", err)
+		return
+	}
+	if err := json.Unmarshal(b, &vncTargets); err != nil {
+		log.Println("vnc targets parse error:", err)
+	}
+	log.Printf("loaded %d vnc targets", len(vncTargets))
+}
+
+// handleVNC bridges a browser WebSocket (noVNC RFB) to a raw TCP VNC server.
+func handleVNC(w http.ResponseWriter, r *http.Request) {
+	c, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return
+	}
+	defer c.Close()
+	addr, ok := vncTargets[r.URL.Query().Get("t")]
+	if !ok {
+		c.WriteMessage(websocket.BinaryMessage, []byte("unknown vnc target"))
+		return
+	}
+	tcp, err := net.DialTimeout("tcp", addr, 10*time.Second)
+	if err != nil {
+		log.Println("vnc dial", addr, err)
+		return
+	}
+	defer tcp.Close()
+	done := make(chan struct{}, 2)
+	go func() {
+		buf := make([]byte, 32768)
+		for {
+			n, rerr := tcp.Read(buf)
+			if n > 0 {
+				if werr := c.WriteMessage(websocket.BinaryMessage, buf[:n]); werr != nil {
+					break
+				}
+			}
+			if rerr != nil {
+				break
+			}
+		}
+		done <- struct{}{}
+	}()
+	go func() {
+		for {
+			_, data, rerr := c.ReadMessage()
+			if rerr != nil {
+				break
+			}
+			if _, werr := tcp.Write(data); werr != nil {
+				break
+			}
+		}
+		done <- struct{}{}
+	}()
+	<-done
 }
 
 func fail(c *websocket.Conn, msg string) {
@@ -137,6 +201,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	loadTargets()
+	loadVNCTargets()
 	idx := env("INDEX_PATH", "/www/index.html")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -161,6 +226,16 @@ func main() {
 		w.Header().Set("Cache-Control", "public, max-age=604800")
 		w.Write(b)
 	})
+	http.HandleFunc("/vnc.html", func(w http.ResponseWriter, r *http.Request) {
+		b, err := os.ReadFile(env("VNC_INDEX_PATH", "/www/vnc.html"))
+		if err != nil {
+			http.Error(w, "vnc index missing", 500)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write(b)
+	})
+	http.HandleFunc("/vncws", handleVNC)
 	http.HandleFunc("/ws", handleWS)
 	log.Println("webterm listening on :8091")
 	log.Fatal(http.ListenAndServe(":8091", nil))

@@ -11,10 +11,14 @@ services:
       TARGETS_PATH: "/targets.json"
       INDEX_PATH: "/www/index.html"
       FONT_PATH: "/font.woff2"
+      VNC_INDEX_PATH: "/www/vnc.html"
+      VNC_TARGETS_PATH: "/vnc-targets.json"
     volumes:
       - ../runtime/webterm/key:/key:ro
       - ../services/webterm/index.html:/www/index.html:ro
       - ../services/webterm/targets.json:/targets.json:ro
       - ../services/webterm/font.woff2:/font.woff2:ro
+      - ../services/webterm/vnc.html:/www/vnc.html:ro
+      - ../services/webterm/vnc-targets.json:/vnc-targets.json:ro
     networks:
       - pihub
