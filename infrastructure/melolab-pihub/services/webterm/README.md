@@ -92,7 +92,12 @@ dropping guacd's server-side raster for VNC), mirroring what it does for SSH:
   `https://pihub...:8090/webterm/vnc.html?t=<name>` (the existing `/webterm/`
   proxy already forwards `/vncws` with WS upgrade - no nginx change needed).
 
-Targets are the Macs' Screen Sharing (`mini`, `vox` on `:5900`). They speak
+Targets are the Macs' Screen Sharing (`mini`, `vox` on `:5900`), addressed by
+**LAN IP** in `vnc-targets.json` rather than tailnet IP: the proxy runs on
+pihub which shares the LAN, so a direct LAN dial avoids WireGuard crypto and
+(for `mini`) a jittery ~2.5ms public-IPv6 tailnet hop, versus ~0.3ms on-LAN -
+a big latency win for interactive VNC. Tradeoff: LAN IPs are DHCP-assigned, so
+set DHCP reservations (or update the file) if they move. They speak
 **Apple Remote Desktop auth** (RFB banner `RFB 003.889`, security type 30 =
 Diffie-Hellman), so noVNC asks for **username + password** (the macOS login),
 not a legacy VNC password - the tile prompts for whatever `credentialsrequired`
