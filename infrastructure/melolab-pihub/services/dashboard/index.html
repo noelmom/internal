@@ -271,6 +271,7 @@
     });
     var fp = dbody.querySelector(".pane[data-type=ssh]") || dbody.querySelector(".pane"); if(fp) setActive(fp);
     updateButtons();
+    if(isTouch) document.getElementById("keybar").classList.add("on");
     detail.classList.add("show");
   }
   var picker = document.getElementById("picker"), pickNode = null;
@@ -283,7 +284,7 @@
   document.getElementById("pick-vnc").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["vnc"]); });
   document.getElementById("pick-ssh").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["ssh"]); });
   picker.addEventListener("click", function(e){ if (e.target === picker) picker.classList.remove("show"); });
-  function startWeb(n){ node=n; document.getElementById("d-nm").textContent=n.name; document.getElementById("d-sub").innerHTML=n.sub; dbody.className="lay-row"; dbody.innerHTML=""; var el=document.createElement("div"); el.className="pane"; el.style.flexGrow="1"; el.innerHTML="<div class=\"plabel\"><span>xterm.js terminal</span><span class=\"inter\">interactive</span></div><iframe src=\"/webterm/?t="+n.web+"\"></iframe>"; dbody.appendChild(el); document.getElementById("add-desktop").style.display="none"; document.getElementById("add-shell").style.display="none"; detail.classList.add("show"); }
+  function startWeb(n){ node=n; document.getElementById("d-nm").textContent=n.name; document.getElementById("d-sub").innerHTML=n.sub; dbody.className="lay-row"; dbody.innerHTML=""; var el=document.createElement("div"); el.className="pane"; el.style.flexGrow="1"; el.innerHTML="<div class=\"plabel\"><span>xterm.js terminal</span><span class=\"inter\">interactive</span></div><iframe src=\"/webterm/?t="+n.web+"\"></iframe>"; dbody.appendChild(el); document.getElementById("add-desktop").style.display="none"; document.getElementById("add-shell").style.display="none"; document.getElementById("keybar").classList.remove("on"); detail.classList.add("show"); }
   function closeNode(){ detail.classList.remove("show"); dbody.innerHTML = ""; node = null; }
   document.getElementById("back").addEventListener("click", closeNode);
   document.getElementById("lay-row").addEventListener("click", function(){ setLayout("row"); });
@@ -327,7 +328,7 @@
     kbinput.addEventListener("input", function(){ var c=activeClient(); if(!c){ kbinput.value=""; return; } var t=kbinput.value; for(var i=0;i<t.length;i++){ var cp=t.charCodeAt(i); c.sendKeyEvent(1,cp); c.sendKeyEvent(0,cp); } kbinput.value=""; });
     kbinput.addEventListener("keydown", function(e){ var c=activeClient(); if(!c) return; var m={Backspace:0xff08,Enter:0xff0d,Tab:0xff09,Escape:0xff1b,ArrowUp:0xff52,ArrowDown:0xff54,ArrowLeft:0xff51,ArrowRight:0xff53}; if(m[e.key]!==undefined){ c.sendKeyEvent(1,m[e.key]); c.sendKeyEvent(0,m[e.key]); e.preventDefault(); } });
   }
-  if(("ontouchstart" in window) || navigator.maxTouchPoints>0){ document.getElementById("keybar").classList.add("on"); }
+  var isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
 </script>
 </body>
 </html>
