@@ -184,7 +184,8 @@
     { name:"pve",    sub:"root &middot; SSH via Tailscale", ssh:1 },
     { name:"Mac Ai", sub:"mini-ai &middot; macOS",          vnc:2, ssh:3 },
     { name:"pihub",  sub:"control hub &middot; SSH",        ssh:4 },
-    { name:"vox-beta", sub:"this Mac &middot; macOS",  vnc:6, ssh:5 }
+    { name:"vox-beta", sub:"this Mac &middot; macOS",  vnc:6, ssh:5 },
+    { name:"pihub (xterm.js)", sub:"Go + xterm.js prototype", web:8091 }
   ];
   var host = location.hostname;
   var guacBase = "/guacamole/";
@@ -192,8 +193,9 @@
   document.getElementById("guaclink").href = adminUrl;
   function clientId(id){ var N=String.fromCharCode(0); return btoa(id+N+"c"+N+"postgresql"); }
   function clientUrl(id){ return guacBase + "#/client/" + clientId(id); }
-  function badges(n){ return (n.vnc?"<span class=\"badge\">VNC</span>":"") + (n.ssh?"<span class=\"badge\">SSH</span>":""); }
+  function badges(n){ if(n.web) return "<span class=\"badge\">WEB</span>"; return (n.vnc?"<span class=\"badge\">VNC</span>":"") + (n.ssh?"<span class=\"badge\">SSH</span>":""); }
   function preview(n){
+    if (n.web) { return "<div class=\"preview term\"><div class=\"g\">xterm.js web terminal</div><div class=\"d\">Go + WebSocket + SSH</div><div>&nbsp;</div><div class=\"g\">$ <span class=\"cursor\"></span></div><div class=\"ov\">Click to open</div></div>"; }
     if (n.vnc) {
       var t = n.ssh ? "<div class=\"term2\"><div style=\"color:#88c0d0\">tmux: agent</div><div>&gt; working&hellip;</div></div>" : "";
       return "<div class=\"preview desk\"><div class=\"win\"><div class=\"tb\"></div><div class=\"ln\" style=\"width:70%\"></div><div class=\"ln\" style=\"width:48%\"></div><div class=\"ln\" style=\"width:60%\"></div></div>" + t + "<div class=\"bar\"></div><div class=\"ov\">" + (n.ssh?"Click: pick desktop / terminal / both":"Click to open desktop") + "</div></div>";
@@ -271,6 +273,7 @@
   }
   var picker = document.getElementById("picker"), pickNode = null;
   function openNode(n){
+    if (n.web) { startWeb(n); return; }
     if (n.vnc && n.ssh) { pickNode = n; document.getElementById("pick-nm").textContent = n.name; picker.classList.add("show"); }
     else startSession(n, [ n.vnc ? "vnc" : "ssh" ]);
   }
@@ -278,6 +281,7 @@
   document.getElementById("pick-vnc").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["vnc"]); });
   document.getElementById("pick-ssh").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["ssh"]); });
   picker.addEventListener("click", function(e){ if (e.target === picker) picker.classList.remove("show"); });
+  function startWeb(n){ node=n; document.getElementById("d-nm").textContent=n.name; document.getElementById("d-sub").innerHTML=n.sub; dbody.className="lay-row"; dbody.innerHTML=""; var el=document.createElement("div"); el.className="pane"; el.style.flexGrow="1"; el.innerHTML="<div class=\"plabel\"><span>xterm.js terminal</span><span class=\"inter\">interactive</span></div><iframe src=\"http://"+location.hostname+":"+n.web+"/\"></iframe>"; dbody.appendChild(el); document.getElementById("add-desktop").style.display="none"; document.getElementById("add-shell").style.display="none"; detail.classList.add("show"); }
   function closeNode(){ detail.classList.remove("show"); dbody.innerHTML = ""; node = null; }
   document.getElementById("back").addEventListener("click", closeNode);
   document.getElementById("lay-row").addEventListener("click", function(){ setLayout("row"); });

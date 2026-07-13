@@ -1,0 +1,17 @@
+services:
+  webterm:
+    build: ../services/webterm
+    image: melolab/webterm:latest
+    container_name: webterm
+    restart: unless-stopped
+    ports:
+      - "8091:8091"
+    environment:
+      SSH_HOST: "172.19.0.1:22"
+      SSH_USER: "noelmomelo"
+      SSH_KEY: "/key"
+      SSH_CMD: "/usr/local/bin/tmux-menu"
+    volumes:
+      - ../runtime/webterm/key:/key:ro
+    networks:
+      - pihub

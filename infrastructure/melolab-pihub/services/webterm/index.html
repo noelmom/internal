@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>webterm</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+<style>
+  html,body { margin:0; height:100%; background:#141413; }
+  #t { position:absolute; inset:0; padding:6px; }
+</style>
+</head>
+<body>
+<div id="t"></div>
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<script>
+  var IN = String.fromCharCode(0), RS = String.fromCharCode(1);
+  var term = new Terminal({
+    fontSize: 13,
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+    cursorBlink: true,
+    scrollback: 50000,
+    theme: { background: "#141413", foreground: "#eceae3", cursor: "#9FE1CB" }
+  });
+  var fit = new FitAddon.FitAddon();
+  term.loadAddon(fit);
+  term.open(document.getElementById("t"));
+  fit.fit();
+  var proto = location.protocol === "https:" ? "wss" : "ws";
+  var ws = new WebSocket(proto + "://" + location.host + "/ws");
+  ws.binaryType = "arraybuffer";
+  function sendSize(){ try { ws.send(RS + JSON.stringify({cols: term.cols, rows: term.rows})); } catch(e){} }
+  ws.onopen = function(){ sendSize(); term.focus(); };
+  ws.onmessage = function(e){ term.write(typeof e.data === "string" ? e.data : new Uint8Array(e.data)); };
+  ws.onclose = function(){ term.write("\r\n[disconnected]\r\n"); };
+  term.onData(function(d){ ws.send(IN + d); });
+  function refit(){ fit.fit(); sendSize(); }
+  window.addEventListener("resize", refit);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", refit);
+</script>
+</body>
+</html>

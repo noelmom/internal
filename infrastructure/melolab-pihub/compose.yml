@@ -3,6 +3,7 @@ include:
   - ./compose/cloudflared.yml
   - ./compose/guacamole.yml
   - ./compose/dashboard.yml
+  - ./compose/webterm.yml
 
 networks:
   pihub:
