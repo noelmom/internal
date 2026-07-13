@@ -4,9 +4,10 @@ services:
     container_name: dashboard
     restart: unless-stopped
     ports:
-      - "8090:80"
+      - "8090:443"
     volumes:
       - ../services/dashboard:/usr/share/nginx/html:ro
       - ../services/dashboard-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../runtime/certs:/certs:ro
     networks:
       - pihub

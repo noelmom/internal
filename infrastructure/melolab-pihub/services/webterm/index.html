@@ -48,7 +48,8 @@
   var isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
   var proto = location.protocol === "https:" ? "wss" : "ws";
   var target = new URLSearchParams(location.search).get("t") || "";
-  var ws = new WebSocket(proto + "://" + location.host + "/ws?t=" + encodeURIComponent(target));
+  var wsbase = location.pathname.replace(/[^/]*$/, "");
+  var ws = new WebSocket(proto + "://" + location.host + wsbase + "ws?t=" + encodeURIComponent(target));
   ws.binaryType = "arraybuffer";
   function sendSize(){ try { ws.send(RS + JSON.stringify({cols: term.cols, rows: term.rows})); } catch(e){} }
   ws.onopen = function(){ sendSize(); if(!isTouch) term.focus(); };
