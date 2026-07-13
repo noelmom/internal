@@ -7,13 +7,12 @@ services:
     ports:
       - "8091:8091"
     environment:
-      SSH_HOST: "172.19.0.1:22"
-      SSH_USER: "noelmomelo"
       SSH_KEY: "/key"
-      SSH_CMD: "/usr/local/bin/tmux-menu"
+      TARGETS_PATH: "/targets.json"
       INDEX_PATH: "/www/index.html"
     volumes:
       - ../runtime/webterm/key:/key:ro
       - ../services/webterm/index.html:/www/index.html:ro
+      - ../services/webterm/targets.json:/targets.json:ro
     networks:
       - pihub

@@ -185,7 +185,9 @@
     { name:"Mac Ai", sub:"mini-ai &middot; macOS",          vnc:2, ssh:3 },
     { name:"pihub",  sub:"control hub &middot; SSH",        ssh:4 },
     { name:"vox-beta", sub:"this Mac &middot; macOS",  vnc:6, ssh:5 },
-    { name:"pihub (xterm.js)", sub:"Go + xterm.js prototype", web:8091 }
+    { name:"pihub (xterm.js)", sub:"Go + xterm.js", web:"pihub" },
+    { name:"mini-ai (xterm.js)", sub:"Go + xterm.js", web:"mini-ai" },
+    { name:"vox-beta (xterm.js)", sub:"Go + xterm.js", web:"vox-beta" }
   ];
   var host = location.hostname;
   var guacBase = "/guacamole/";
@@ -281,7 +283,7 @@
   document.getElementById("pick-vnc").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["vnc"]); });
   document.getElementById("pick-ssh").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["ssh"]); });
   picker.addEventListener("click", function(e){ if (e.target === picker) picker.classList.remove("show"); });
-  function startWeb(n){ node=n; document.getElementById("d-nm").textContent=n.name; document.getElementById("d-sub").innerHTML=n.sub; dbody.className="lay-row"; dbody.innerHTML=""; var el=document.createElement("div"); el.className="pane"; el.style.flexGrow="1"; el.innerHTML="<div class=\"plabel\"><span>xterm.js terminal</span><span class=\"inter\">interactive</span></div><iframe src=\"http://"+location.hostname+":"+n.web+"/\"></iframe>"; dbody.appendChild(el); document.getElementById("add-desktop").style.display="none"; document.getElementById("add-shell").style.display="none"; detail.classList.add("show"); }
+  function startWeb(n){ node=n; document.getElementById("d-nm").textContent=n.name; document.getElementById("d-sub").innerHTML=n.sub; dbody.className="lay-row"; dbody.innerHTML=""; var el=document.createElement("div"); el.className="pane"; el.style.flexGrow="1"; el.innerHTML="<div class=\"plabel\"><span>xterm.js terminal</span><span class=\"inter\">interactive</span></div><iframe src=\"http://"+location.hostname+":8091/?t="+n.web+"\"></iframe>"; dbody.appendChild(el); document.getElementById("add-desktop").style.display="none"; document.getElementById("add-shell").style.display="none"; detail.classList.add("show"); }
   function closeNode(){ detail.classList.remove("show"); dbody.innerHTML = ""; node = null; }
   document.getElementById("back").addEventListener("click", closeNode);
   document.getElementById("lay-row").addEventListener("click", function(){ setLayout("row"); });

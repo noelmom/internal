@@ -1,0 +1,5 @@
+{
+  "pihub":    { "host": "172.19.0.1:22",      "user": "noelmomelo", "cmd": "/usr/local/bin/tmux-menu" },
+  "mini-ai":  { "host": "100.126.156.116:22", "user": "noelmomelo", "cmd": "/opt/homebrew/bin/tmux-menu" },
+  "vox-beta": { "host": "100.117.201.57:22",  "user": "noelmomelo", "cmd": "/opt/homebrew/bin/tmux-menu" }
+}

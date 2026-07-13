@@ -10,6 +10,13 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+type Target struct {
+	Host string `json:"host"`
+	User string `json:"user"`
+	Key  string `json:"key"`
+	Cmd  string `json:"cmd"`
+}
+
 func env(k, d string) string {
 	if v := os.Getenv(k); v != "" {
 		return v
@@ -17,7 +24,22 @@ func env(k, d string) string {
 	return d
 }
 
-var upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+var (
+	upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+	targets  = map[string]Target{}
+)
+
+func loadTargets() {
+	b, err := os.ReadFile(env("TARGETS_PATH", "/targets.json"))
+	if err != nil {
+		log.Println("targets load error:", err)
+		return
+	}
+	if err := json.Unmarshal(b, &targets); err != nil {
+		log.Println("targets parse error:", err)
+	}
+	log.Printf("loaded %d targets", len(targets))
+}
 
 func fail(c *websocket.Conn, msg string) {
 	c.WriteMessage(websocket.BinaryMessage, []byte("\r\n[webterm: "+msg+"]\r\n"))
@@ -30,7 +52,16 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.Close()
 
-	key, err := os.ReadFile(env("SSH_KEY", "/key"))
+	tg, ok := targets[r.URL.Query().Get("t")]
+	if !ok {
+		fail(c, "unknown target: "+r.URL.Query().Get("t"))
+		return
+	}
+	keyPath := tg.Key
+	if keyPath == "" {
+		keyPath = env("SSH_KEY", "/key")
+	}
+	key, err := os.ReadFile(keyPath)
 	if err != nil {
 		fail(c, "key read: "+err.Error())
 		return
@@ -41,13 +72,13 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg := &ssh.ClientConfig{
-		User:            env("SSH_USER", "noelmomelo"),
+		User:            tg.User,
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	client, err := ssh.Dial("tcp", env("SSH_HOST", "172.19.0.1:22"), cfg)
+	client, err := ssh.Dial("tcp", tg.Host, cfg)
 	if err != nil {
-		fail(c, "ssh dial: "+err.Error())
+		fail(c, "ssh dial "+tg.Host+": "+err.Error())
 		return
 	}
 	defer client.Close()
@@ -63,8 +94,8 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	stdin, _ := sess.StdinPipe()
 	stdout, _ := sess.StdoutPipe()
 
-	if cmd := env("SSH_CMD", ""); cmd != "" {
-		sess.Start(cmd)
+	if tg.Cmd != "" {
+		sess.Start(tg.Cmd)
 	} else {
 		sess.Shell()
 	}
@@ -105,6 +136,7 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	loadTargets()
 	idx := env("INDEX_PATH", "/www/index.html")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
