@@ -13,10 +13,14 @@
   #kb.on { display:flex; }
   #kb button { flex:0 0 auto; height:40px; min-width:42px; padding:0 12px; background:#242423; color:#eceae3; border:0.5px solid #5f5e5a; border-radius:8px; font:inherit; font-size:14px; display:inline-flex; align-items:center; justify-content:center; touch-action:manipulation; }
   #kb button.on { background:#378ADD; border-color:#378ADD; color:#fff; }
+  #fz { position:fixed; top:6px; right:10px; z-index:5; display:flex; gap:4px; opacity:0.5; transition:opacity .15s; }
+  #fz:hover { opacity:1; }
+  #fz button { width:30px; height:30px; padding:0; background:rgba(36,36,35,0.85); color:#eceae3; border:0.5px solid #5f5e5a; border-radius:7px; font:inherit; font-size:15px; line-height:1; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; touch-action:manipulation; }
 </style>
 </head>
 <body>
 <div id="t"></div>
+<div id="fz"><button data-fz="-1" aria-label="smaller font">A-</button><button data-fz="1" aria-label="larger font">A+</button></div>
 <div id="kb">
   <button data-k="esc">Esc</button>
   <button data-k="ctrl">Ctrl</button>
@@ -40,13 +44,21 @@
     up: E+"[A", down: E+"[B", right: E+"[C", left: E+"[D",
     pgup: String.fromCharCode(2)+E+"[5~", pgdn: E+"[6~", prefix: String.fromCharCode(2)
   };
+  var FZKEY = "webterm_fontsize";
+  var fzSaved = parseInt(localStorage.getItem(FZKEY) || "", 10);
+  var fzInit = (fzSaved >= 8 && fzSaved <= 28) ? fzSaved : 12;
   var term = new Terminal({
-    fontSize: 12, fontFamily: "'CaskaydiaCove Nerd Font', ui-monospace, SFMono-Regular, Menlo, monospace",
+    fontSize: fzInit, fontFamily: "'CaskaydiaCove Nerd Font', ui-monospace, SFMono-Regular, Menlo, monospace",
     cursorBlink: true, scrollback: 50000,
     theme: { background: "#141413", foreground: "#eceae3", cursor: "#9FE1CB" }
   });
   var fit = new FitAddon.FitAddon(); term.loadAddon(fit);
   term.open(document.getElementById("t")); fit.fit();
+  function setFont(n){ n = Math.max(8, Math.min(28, n)); term.options.fontSize = n; try { localStorage.setItem(FZKEY, n); } catch(e){} fit.fit(); if (typeof sendSize === "function") sendSize(); }
+  document.querySelectorAll("#fz button").forEach(function(b){
+    b.addEventListener("mousedown", function(e){ e.preventDefault(); });
+    b.addEventListener("click", function(){ setFont(term.options.fontSize + parseInt(b.dataset.fz, 10)); });
+  });
   var isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
   var proto = location.protocol === "https:" ? "wss" : "ws";
   var target = new URLSearchParams(location.search).get("t") || "";

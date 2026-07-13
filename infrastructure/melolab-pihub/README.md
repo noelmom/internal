@@ -20,15 +20,19 @@ It provides core networking, monitoring, dashboarding, and future infrastructure
 
 # Current Services
 
-| Service     | Status     |
-| ----------- | ---------- |
-| Homepage    | ✅          |
-| Uptime Kuma | ✅          |
-| Cloudflared | ✅          |
-| Pi-hole     | 🚧 Planned |
-| Grafana     | 🚧 Planned |
-| Loki        | 🚧 Planned |
-| Prometheus  | 🚧 Planned |
+| Service                     | Status                                 |
+| --------------------------- | -------------------------------------- |
+| Uptime Kuma                 | Live                                   |
+| Cloudflared                 | Live (tunnel + Cloudflare Access)      |
+| Guacamole                   | Live (VNC/RDP via guacd, :8080)        |
+| Dashboard                   | Live (custom nginx shell, :8090 HTTPS) |
+| webterm                     | Live (Go + xterm.js SSH terminals)     |
+| Grafana / Loki / Prometheus | Planned                                |
+
+> **Note:** Homepage and Pi-hole were removed in the July 2026 pivot to a
+> Guacamole/webterm remote-access dashboard. The Homepage, Pi-hole, and
+> Directory-Structure sections further down are historical and pending a
+> rewrite.
 
 ---
 
@@ -312,6 +316,28 @@ docker compose up -d
 * AI Infrastructure Assistant
 * Cloudflare Access
 * GitOps
+
+---
+
+# Remote Access Roadmap
+
+The control-hub dashboard (`:8090`, HTTPS via a Tailscale cert) is how the
+fleet is driven from a browser.
+
+Current:
+
+* **Guacamole (guacd)** - VNC/RDP tiles, rendered **server-side** as pixels.
+* **webterm (Go + xterm.js)** - SSH terminals, rendered **client-side** in the
+  browser. Self-hosted CaskaydiaCove Nerd Font (woff2) and a UTF-8 locale fix
+  so Claude Code glyphs render. See `services/webterm/README.md`.
+
+Next:
+
+* **noVNC (pure JS) + a WebSocket-to-TCP proxy route** - render VNC
+  client-side the same way webterm does for SSH, dropping the guacd raster.
+* **Later: guacamole-lite (Node) or IronRDP** - client-side RDP.
+* **Auth in front of webterm / the proxy** before any non-LAN exposure -
+  today anyone who can reach the service can open any configured target.
 
 ---
 
