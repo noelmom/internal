@@ -22,7 +22,7 @@
 </head>
 <body>
 <div id="t"></div>
-<div id="fz"><button id="selbtn" title="Select mode: drag to select/copy and click links (turns off tmux mouse scroll)">Sel</button><button data-fz="-1" aria-label="smaller font">A-</button><button data-fz="1" aria-label="larger font">A+</button></div>
+<div id="fz"><button id="selbtn" title="tmux mouse: on = scroll wheel; off = drag-select/copy + click links (default)">Scrl</button><button data-fz="-1" aria-label="smaller font">A-</button><button data-fz="1" aria-label="larger font">A+</button></div>
 <div id="kb">
   <button data-k="esc">Esc</button>
   <button data-k="ctrl">Ctrl</button>
@@ -114,14 +114,14 @@
       if (s !== undefined) { ws.send(IN + s); }
     });
   });
-  var selMode = false, selbtn = document.getElementById("selbtn");
-  function setSelMode(on){
-    selMode = on;
-    ws.send(IN + String.fromCharCode(2) + ":set -g mouse " + (on ? "off" : "on") + String.fromCharCode(13));
+  var mouseOn = false, selbtn = document.getElementById("selbtn");
+  function setMouse(on){
+    mouseOn = on;
+    ws.send(IN + String.fromCharCode(2) + ":set -g mouse " + (on ? "on" : "off") + String.fromCharCode(13));
     selbtn.classList.toggle("on", on);
   }
   selbtn.addEventListener("mousedown", function(e){ e.preventDefault(); });
-  selbtn.addEventListener("click", function(){ setSelMode(!selMode); });
+  selbtn.addEventListener("click", function(){ setMouse(!mouseOn); });
   function refit(){ fit.fit(); sendSize(); }
   if (document.fonts && document.fonts.load) { document.fonts.load('12px "CaskaydiaCove Nerd Font"').then(refit).catch(function(){}); }
   window.addEventListener("resize", refit);
