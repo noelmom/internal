@@ -37,7 +37,7 @@
   var SEQ = {
     esc: E, tab: String.fromCharCode(9), enter: String.fromCharCode(13), bksp: String.fromCharCode(127),
     up: E+"[A", down: E+"[B", right: E+"[C", left: E+"[D",
-    pgup: E+"[5~", pgdn: E+"[6~", prefix: String.fromCharCode(2)
+    pgup: String.fromCharCode(2)+E+"[5~", pgdn: E+"[6~", prefix: String.fromCharCode(2)
   };
   var term = new Terminal({
     fontSize: 13, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
