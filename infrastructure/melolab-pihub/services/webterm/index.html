@@ -91,10 +91,6 @@
       if (term.hasSelection()) copyText(term.getSelection());
       return false;
     }
-    if ((e.metaKey && k==="v") || (e.ctrlKey && e.shiftKey && k==="v")) {
-      if (navigator.clipboard && navigator.clipboard.readText) { navigator.clipboard.readText().then(function(t){ if(t) ws.send(IN+t); }).catch(function(){}); return false; }
-      return true;
-    }
     return true;
   });
   var ctrl = false;
