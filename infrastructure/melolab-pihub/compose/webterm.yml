@@ -11,7 +11,9 @@ services:
       SSH_USER: "noelmomelo"
       SSH_KEY: "/key"
       SSH_CMD: "/usr/local/bin/tmux-menu"
+      INDEX_PATH: "/www/index.html"
     volumes:
       - ../runtime/webterm/key:/key:ro
+      - ../services/webterm/index.html:/www/index.html:ro
     networks:
       - pihub

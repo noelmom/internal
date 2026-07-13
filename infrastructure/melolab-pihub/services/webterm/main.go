@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	_ "embed"
 	"log"
 	"net/http"
 	"os"
@@ -10,9 +9,6 @@ import (
 	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/ssh"
 )
-
-//go:embed index.html
-var indexHTML []byte
 
 func env(k, d string) string {
 	if v := os.Getenv(k); v != "" {
@@ -109,13 +105,19 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	idx := env("INDEX_PATH", "/www/index.html")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
 		}
+		b, err := os.ReadFile(idx)
+		if err != nil {
+			http.Error(w, "index missing", 500)
+			return
+		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write(indexHTML)
+		w.Write(b)
 	})
 	http.HandleFunc("/ws", handleWS)
 	log.Println("webterm listening on :8091")

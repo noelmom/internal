@@ -2,31 +2,49 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>webterm</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
 <style>
-  html,body { margin:0; height:100%; background:#141413; }
-  #t { position:absolute; inset:0; padding:6px; }
+  html,body { margin:0; height:100%; background:#141413; display:flex; flex-direction:column; }
+  #t { flex:1 1 auto; min-height:0; padding:6px; }
+  #kb { flex:0 0 auto; display:none; gap:6px; padding:8px; overflow-x:auto; background:#1b1b1a; border-top:0.5px solid #3a3a38; -webkit-overflow-scrolling:touch; }
+  #kb.on { display:flex; }
+  #kb button { flex:0 0 auto; height:40px; min-width:42px; padding:0 12px; background:#242423; color:#eceae3; border:0.5px solid #5f5e5a; border-radius:8px; font:inherit; font-size:14px; display:inline-flex; align-items:center; justify-content:center; touch-action:manipulation; }
+  #kb button.on { background:#378ADD; border-color:#378ADD; color:#fff; }
 </style>
 </head>
 <body>
 <div id="t"></div>
+<div id="kb">
+  <button data-k="esc">Esc</button>
+  <button data-k="ctrl">Ctrl</button>
+  <button data-k="prefix">C-b</button>
+  <button data-k="tab">Tab</button>
+  <button data-k="left" aria-label="left"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+  <button data-k="down" aria-label="down"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>
+  <button data-k="up" aria-label="up"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  <button data-k="right" aria-label="right"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+  <button data-k="enter">Enter</button>
+  <button data-k="pgup">PgUp</button>
+  <button data-k="pgdn">PgDn</button>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
 <script>
-  var IN = String.fromCharCode(0), RS = String.fromCharCode(1);
+  var IN = String.fromCharCode(0), RS = String.fromCharCode(1), E = String.fromCharCode(27);
+  var SEQ = {
+    esc: E, tab: String.fromCharCode(9), enter: String.fromCharCode(13),
+    up: E+"[A", down: E+"[B", right: E+"[C", left: E+"[D",
+    pgup: E+"[5~", pgdn: E+"[6~", prefix: String.fromCharCode(2)
+  };
   var term = new Terminal({
-    fontSize: 13,
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-    cursorBlink: true,
-    scrollback: 50000,
+    fontSize: 13, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+    cursorBlink: true, scrollback: 50000,
     theme: { background: "#141413", foreground: "#eceae3", cursor: "#9FE1CB" }
   });
-  var fit = new FitAddon.FitAddon();
-  term.loadAddon(fit);
-  term.open(document.getElementById("t"));
-  fit.fit();
+  var fit = new FitAddon.FitAddon(); term.loadAddon(fit);
+  term.open(document.getElementById("t")); fit.fit();
   var proto = location.protocol === "https:" ? "wss" : "ws";
   var ws = new WebSocket(proto + "://" + location.host + "/ws");
   ws.binaryType = "arraybuffer";
@@ -34,10 +52,27 @@
   ws.onopen = function(){ sendSize(); term.focus(); };
   ws.onmessage = function(e){ term.write(typeof e.data === "string" ? e.data : new Uint8Array(e.data)); };
   ws.onclose = function(){ term.write("\r\n[disconnected]\r\n"); };
-  term.onData(function(d){ ws.send(IN + d); });
+  var ctrl = false;
+  function ctrlBtn(){ var b=document.querySelector("#kb [data-k=ctrl]"); if(b) b.classList.toggle("on", ctrl); }
+  term.onData(function(d){
+    if (ctrl && d.length === 1) {
+      var lc = d.toLowerCase().charCodeAt(0);
+      if (lc >= 97 && lc <= 122) { ws.send(IN + String.fromCharCode(lc & 0x1f)); ctrl = false; ctrlBtn(); return; }
+    }
+    ws.send(IN + d);
+  });
+  document.querySelectorAll("#kb button").forEach(function(b){
+    b.addEventListener("click", function(){
+      var k = b.dataset.k;
+      if (k === "ctrl") { ctrl = !ctrl; ctrlBtn(); return; }
+      var s = SEQ[k];
+      if (s !== undefined) { ws.send(IN + s); term.focus(); }
+    });
+  });
   function refit(){ fit.fit(); sendSize(); }
   window.addEventListener("resize", refit);
   if (window.visualViewport) window.visualViewport.addEventListener("resize", refit);
+  if (("ontouchstart" in window) || navigator.maxTouchPoints > 0) document.getElementById("kb").classList.add("on");
 </script>
 </body>
 </html>
