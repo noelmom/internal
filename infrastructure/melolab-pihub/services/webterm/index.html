@@ -16,11 +16,13 @@
   #fz { position:fixed; top:6px; right:10px; z-index:5; display:flex; gap:4px; opacity:0.5; transition:opacity .15s; }
   #fz:hover { opacity:1; }
   #fz button { width:30px; height:30px; padding:0; background:rgba(36,36,35,0.85); color:#eceae3; border:0.5px solid #5f5e5a; border-radius:7px; font:inherit; font-size:15px; line-height:1; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; touch-action:manipulation; }
+  #fz button.on { background:#378ADD; border-color:#378ADD; color:#fff; }
+  #selbtn { width:auto; padding:0 9px; font-size:13px; }
 </style>
 </head>
 <body>
 <div id="t"></div>
-<div id="fz"><button data-fz="-1" aria-label="smaller font">A-</button><button data-fz="1" aria-label="larger font">A+</button></div>
+<div id="fz"><button id="selbtn" title="Select mode: drag to select/copy and click links (turns off tmux mouse scroll)">Sel</button><button data-fz="-1" aria-label="smaller font">A-</button><button data-fz="1" aria-label="larger font">A+</button></div>
 <div id="kb">
   <button data-k="esc">Esc</button>
   <button data-k="ctrl">Ctrl</button>
@@ -37,6 +39,7 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.js"></script>
 <script>
   var IN = String.fromCharCode(0), RS = String.fromCharCode(1), E = String.fromCharCode(27);
   var SEQ = {
@@ -53,9 +56,10 @@
     theme: { background: "#141413", foreground: "#eceae3", cursor: "#9FE1CB" }
   });
   var fit = new FitAddon.FitAddon(); term.loadAddon(fit);
+  if (window.WebLinksAddon) term.loadAddon(new WebLinksAddon.WebLinksAddon());
   term.open(document.getElementById("t")); fit.fit();
   function setFont(n){ n = Math.max(8, Math.min(28, n)); term.options.fontSize = n; try { localStorage.setItem(FZKEY, n); } catch(e){} fit.fit(); if (typeof sendSize === "function") sendSize(); }
-  document.querySelectorAll("#fz button").forEach(function(b){
+  document.querySelectorAll("#fz button[data-fz]").forEach(function(b){
     b.addEventListener("mousedown", function(e){ e.preventDefault(); });
     b.addEventListener("click", function(){ setFont(term.options.fontSize + parseInt(b.dataset.fz, 10)); });
   });
@@ -110,6 +114,14 @@
       if (s !== undefined) { ws.send(IN + s); }
     });
   });
+  var selMode = false, selbtn = document.getElementById("selbtn");
+  function setSelMode(on){
+    selMode = on;
+    ws.send(IN + String.fromCharCode(2) + ":set -g mouse " + (on ? "off" : "on") + String.fromCharCode(13));
+    selbtn.classList.toggle("on", on);
+  }
+  selbtn.addEventListener("mousedown", function(e){ e.preventDefault(); });
+  selbtn.addEventListener("click", function(){ setSelMode(!selMode); });
   function refit(){ fit.fit(); sendSize(); }
   if (document.fonts && document.fonts.load) { document.fonts.load('12px "CaskaydiaCove Nerd Font"').then(refit).catch(function(){}); }
   window.addEventListener("resize", refit);
