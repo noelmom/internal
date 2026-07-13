@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>webterm</title>
+<title>SSH</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
 <style>
   @font-face { font-family:"CaskaydiaCove Nerd Font"; src: local("CaskaydiaCove Nerd Font"), local("CaskaydiaCove Nerd Font Mono"), url("font.woff2") format("woff2"); font-display:swap; }
@@ -66,6 +66,7 @@
   var isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
   var proto = location.protocol === "https:" ? "wss" : "ws";
   var target = new URLSearchParams(location.search).get("t") || "";
+  document.title = (target ? target.charAt(0).toUpperCase()+target.slice(1) : "webterm") + " SSH";
   var wsbase = location.pathname.replace(/[^/]*$/, "");
   var ws = new WebSocket(proto + "://" + location.host + wsbase + "ws?t=" + encodeURIComponent(target));
   ws.binaryType = "arraybuffer";

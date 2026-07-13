@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Birdview - fleet dashboard</title>
+<title>Fleet Dashboard</title>
 <style>
   :root { --bg:#141413; --surface-1:#242423; --surface-2:#1b1b1a; --border:#3a3a38;
     --border-strong:#5f5e5a; --text:#eceae3; --text-2:#b4b2a9; --muted:#888780;
@@ -261,10 +261,13 @@
     document.getElementById("lay-col").classList.toggle("on", l === "col");
     dbody.querySelectorAll(".pane").forEach(function(p){ p.style.flexGrow = "1"; });
   }
+  function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
   function startSession(n, types){
     node = n; shellN = 0;
     document.getElementById("d-nm").textContent = n.name;
     document.getElementById("d-sub").innerHTML = n.sub;
+    var tv = types.indexOf("vnc")>=0 && n.vnc, ts = types.indexOf("ssh")>=0 && n.ssh;
+    document.title = cap(n.name) + " " + (tv && ts ? "VNC+SSH" : tv ? "VNC" : "SSH");
     dbody.innerHTML = ""; setLayout("row");
     types.forEach(function(t){
       if (t === "vnc" && n.vnc) addPane("vnc", n.vnc, "Desktop &middot; VNC");
@@ -285,8 +288,8 @@
   document.getElementById("pick-vnc").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["vnc"]); });
   document.getElementById("pick-ssh").addEventListener("click", function(){ picker.classList.remove("show"); startSession(pickNode, ["ssh"]); });
   picker.addEventListener("click", function(e){ if (e.target === picker) picker.classList.remove("show"); });
-  function startWeb(n){ node=n; document.getElementById("d-nm").textContent=n.name; document.getElementById("d-sub").innerHTML=n.sub; dbody.className="lay-row"; dbody.innerHTML=""; var el=document.createElement("div"); el.className="pane"; el.style.flexGrow="1"; el.innerHTML="<div class=\"plabel\"><span>xterm.js terminal</span><span class=\"inter\">interactive</span></div><iframe src=\"/webterm/?t="+n.web+"\"></iframe>"; dbody.appendChild(el); document.getElementById("add-desktop").style.display="none"; document.getElementById("add-shell").style.display="none"; document.getElementById("keybar").classList.remove("on"); detail.classList.add("show"); }
-  function closeNode(){ detail.classList.remove("show"); dbody.innerHTML = ""; node = null; }
+  function startWeb(n){ node=n; document.title = cap(n.web) + " SSH"; document.getElementById("d-nm").textContent=n.name; document.getElementById("d-sub").innerHTML=n.sub; dbody.className="lay-row"; dbody.innerHTML=""; var el=document.createElement("div"); el.className="pane"; el.style.flexGrow="1"; el.innerHTML="<div class=\"plabel\"><span>xterm.js terminal</span><span class=\"inter\">interactive</span></div><iframe src=\"/webterm/?t="+n.web+"\"></iframe>"; dbody.appendChild(el); document.getElementById("add-desktop").style.display="none"; document.getElementById("add-shell").style.display="none"; document.getElementById("keybar").classList.remove("on"); detail.classList.add("show"); }
+  function closeNode(){ detail.classList.remove("show"); dbody.innerHTML = ""; node = null; document.title = "Fleet Dashboard"; }
   document.getElementById("back").addEventListener("click", closeNode);
   document.getElementById("lay-row").addEventListener("click", function(){ setLayout("row"); });
   document.getElementById("lay-col").addEventListener("click", function(){ setLayout("col"); });

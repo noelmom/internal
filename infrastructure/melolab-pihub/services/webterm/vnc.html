@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>vnc</title>
+<title>VNC</title>
 <style>
   html,body { margin:0; height:100%; background:#141413; overflow:hidden; }
   #screen { width:100%; height:100%; }
@@ -17,6 +17,7 @@
   import RFB from "./novnc/core/rfb.js";
   var params = new URLSearchParams(location.search);
   var target = params.get("t") || "";
+  document.title = "VNC - " + (target ? target.charAt(0).toUpperCase()+target.slice(1) : "VNC");
   var proto = location.protocol === "https:" ? "wss" : "ws";
   var base = location.pathname.replace(/[^/]*$/, "");
   var url = proto + "://" + location.host + base + "vncws?t=" + encodeURIComponent(target);
