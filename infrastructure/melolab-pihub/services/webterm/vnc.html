@@ -14,7 +14,7 @@
 <div id="screen"></div>
 <div id="msg">connecting...</div>
 <script type="module">
-  import RFB from "novnc/core/rfb.js";
+  import RFB from "./novnc/core/rfb.js";
   var params = new URLSearchParams(location.search);
   var target = params.get("t") || "";
   var proto = location.protocol === "https:" ? "wss" : "ws";
