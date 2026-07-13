@@ -45,11 +45,12 @@
   });
   var fit = new FitAddon.FitAddon(); term.loadAddon(fit);
   term.open(document.getElementById("t")); fit.fit();
+  var isTouch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
   var proto = location.protocol === "https:" ? "wss" : "ws";
   var ws = new WebSocket(proto + "://" + location.host + "/ws");
   ws.binaryType = "arraybuffer";
   function sendSize(){ try { ws.send(RS + JSON.stringify({cols: term.cols, rows: term.rows})); } catch(e){} }
-  ws.onopen = function(){ sendSize(); term.focus(); };
+  ws.onopen = function(){ sendSize(); if(!isTouch) term.focus(); };
   ws.onmessage = function(e){ term.write(typeof e.data === "string" ? e.data : new Uint8Array(e.data)); };
   ws.onclose = function(){ term.write("\r\n[disconnected]\r\n"); };
   var ctrl = false;
@@ -62,17 +63,18 @@
     ws.send(IN + d);
   });
   document.querySelectorAll("#kb button").forEach(function(b){
+    b.addEventListener("mousedown", function(e){ e.preventDefault(); });
     b.addEventListener("click", function(){
       var k = b.dataset.k;
       if (k === "ctrl") { ctrl = !ctrl; ctrlBtn(); return; }
       var s = SEQ[k];
-      if (s !== undefined) { ws.send(IN + s); term.focus(); }
+      if (s !== undefined) { ws.send(IN + s); }
     });
   });
   function refit(){ fit.fit(); sendSize(); }
   window.addEventListener("resize", refit);
   if (window.visualViewport) window.visualViewport.addEventListener("resize", refit);
-  if (("ontouchstart" in window) || navigator.maxTouchPoints > 0) document.getElementById("kb").classList.add("on");
+  if (isTouch) document.getElementById("kb").classList.add("on");
 </script>
 </body>
 </html>
