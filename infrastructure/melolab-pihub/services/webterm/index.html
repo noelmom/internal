@@ -21,6 +21,7 @@
   <button data-k="ctrl">Ctrl</button>
   <button data-k="prefix">C-b</button>
   <button data-k="tab">Tab</button>
+  <button data-k="bksp">Bksp</button>
   <button data-k="left" aria-label="left"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
   <button data-k="down" aria-label="down"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>
   <button data-k="up" aria-label="up"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
@@ -34,7 +35,7 @@
 <script>
   var IN = String.fromCharCode(0), RS = String.fromCharCode(1), E = String.fromCharCode(27);
   var SEQ = {
-    esc: E, tab: String.fromCharCode(9), enter: String.fromCharCode(13),
+    esc: E, tab: String.fromCharCode(9), enter: String.fromCharCode(13), bksp: String.fromCharCode(127),
     up: E+"[A", down: E+"[B", right: E+"[C", left: E+"[D",
     pgup: E+"[5~", pgdn: E+"[6~", prefix: String.fromCharCode(2)
   };

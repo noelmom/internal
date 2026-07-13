@@ -126,6 +126,7 @@
     <button data-k="ctrl" data-sticky="1">Ctrl</button>
     <button data-k="prefix">C-b</button>
     <button data-k="tab">Tab</button>
+      <button data-k="bksp">Bksp</button>
     <button data-k="left" aria-label="left"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
     <button data-k="down" aria-label="down"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>
     <button data-k="up" aria-label="up"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
@@ -301,7 +302,7 @@
     else if (cheat.classList.contains("show")) cheat.classList.remove("show");
     else if (detail.classList.contains("show")) closeNode();
   });
-  var KEYSYM = { esc:0xff1b, tab:0xff09, enter:0xff0d, up:0xff52, down:0xff54, left:0xff51, right:0xff53 };
+  var KEYSYM = { esc:0xff1b, tab:0xff09, enter:0xff0d, bksp:0xff08, up:0xff52, down:0xff54, left:0xff51, right:0xff53 };
   var CTRL=0xffe3, activePane=null, ctrlSticky=false;
   function setActive(el){ activePane=el; dbody.querySelectorAll(".pane").forEach(function(p){ p.classList.toggle("active", p===el); }); }
   function activeClient(){
