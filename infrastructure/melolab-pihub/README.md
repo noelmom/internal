@@ -1,328 +1,139 @@
 # MeloLab PiHub
 
-PiHub is the central infrastructure node for the MeloLab homelab.
+Central control-hub node for the MeloLab / Birdview homelab. Runs on a
+Raspberry Pi 4B (Debian 13) and hosts the always-on infrastructure as a
+modular **Docker Compose v2** stack: the remote-access dashboard, monitoring,
+and the Cloudflare tunnel.
 
-It provides core networking, monitoring, dashboarding, and future infrastructure services using Docker Compose v2 with a modular architecture.
+Everything is reached over Tailscale (tailnet `tail9b70d.ts.net`). The
+dashboard is the primary UI; only what is explicitly noted is exposed to the
+public internet.
 
 ---
 
 # Goals
 
 * Infrastructure as Code
-* Docker-first deployments
-* Modular Docker Compose
-* Portable between Raspberry Pi, Ubuntu, Proxmox, and future hardware
+* Docker-first, modular Compose (one file per service)
+* Portable between Raspberry Pi, Ubuntu, and Proxmox
 * Easy disaster recovery
 * Secure by default
 * Fully documented
 
 ---
 
-# Current Services
+# Services (as-built)
 
-| Service                     | Status                                 |
-| --------------------------- | -------------------------------------- |
-| Uptime Kuma                 | Live                                   |
-| Cloudflared                 | Live (tunnel + Cloudflare Access)      |
-| Guacamole                   | Live (VNC/RDP via guacd, :8080)        |
-| Dashboard                   | Live (custom nginx shell, :8090 HTTPS) |
-| webterm                     | Live (Go + xterm.js SSH terminals)     |
-| Grafana / Loki / Prometheus | Planned                                |
+| Service     | Port  | Exposure            | Purpose                                        |
+| ----------- | ----- | ------------------- | ---------------------------------------------- |
+| dashboard   | 8090  | tailnet / LAN       | Custom nginx UI shell (HTTPS, Tailscale cert)  |
+| webterm     | 8091  | via dashboard proxy | Go + xterm.js SSH terminals (client-side)      |
+| guacamole   | 8080  | tailnet / LAN       | VNC/RDP tiles via guacd (server-side render)   |
+| uptime-kuma | -     | Cloudflare tunnel   | Monitoring (behind Cloudflare Access)          |
+| cloudflared | -     | -                   | Cloudflare tunnel for `*.melolab.dev`          |
 
-> **Note:** Homepage and Pi-hole were removed in the July 2026 pivot to a
-> Guacamole/webterm remote-access dashboard. The Homepage, Pi-hole, and
-> Directory-Structure sections further down are historical and pending a
-> rewrite.
+Removed in the July 2026 pivot to a remote-access dashboard: **Homepage** and
+**Pi-hole**. Grafana / Loki / Prometheus remain possible future additions but
+are not deployed.
 
 ---
 
-# Directory Structure
+# Layout
 
 ```text
 melolab-pihub/
-│
-├── .env
-├── .env.example
-├── .gitignore
-├── compose.yml
-│
-├── compose/
-│   ├── homepage/
-│   │   └── compose.yml
-│   │
-│   ├── uptime-kuma/
-│   │   └── compose.yml
-│   │
-│   ├── cloudflared/
-│   │   └── compose.yml
-│   │
-│   ├── pihole/
-│   │   └── compose.yml
-│   │
-│   ├── grafana/
-│   │   └── compose.yml
-│   │
-│   ├── loki/
-│   │   └── compose.yml
-│   │
-│   └── prometheus/
-│       └── compose.yml
-│
-├── services/
-│   ├── homepage/
-│   │   └── config/
-│   │       ├── bookmarks.yaml
-│   │       ├── docker.yaml
-│   │       ├── services.yaml
-│   │       ├── settings.yaml
-│   │       └── widgets.yaml
-│   │
-│   ├── uptime-kuma/
-│   │   └── data/
-│   │
-│   ├── cloudflared/
-│   │   └── config.yml
-│   │
-│   ├── pihole/
-│   │   ├── etc-pihole/
-│   │   └── etc-dnsmasq.d/
-│   │
-│   ├── grafana/
-│   │   └── data/
-│   │
-│   ├── loki/
-│   │   └── data/
-│   │
-│   └── prometheus/
-│       └── data/
-│
-├── backups/
-│
-├── docs/
-│
-├── scripts/
-│
-├── AGENT.md
-├── BACKLOG.md
-├── CHANGELOG.md
-└── README.md
+|
++-- compose.yml            # top-level; includes compose/*.yml
+|
++-- compose/               # one Compose file per service
+|   +-- cloudflared.yml
+|   +-- dashboard.yml
+|   +-- guacamole.yml
+|   +-- uptime-kuma.yml
+|   +-- webterm.yml
+|   +-- template.yml       # scaffold for a new service
+|
++-- services/              # build contexts + static config
+|   +-- cloudflared/       #   tunnel config.yml
+|   +-- dashboard/         #   index.html (the dashboard shell)
+|   +-- dashboard-nginx.conf
+|   +-- guacamole/         #   connections.sql seed
+|   +-- webterm/           #   Go + xterm.js terminal (see its README)
+|
++-- runtime/               # gitignored: data, certs, keys (never committed)
+|
++-- README.md
 ```
 
 ---
 
 # Configuration
 
-Runtime configuration:
-
-```text
-.env
-```
-
-Template:
-
-```text
-.env.example
-```
+Runtime config lives in `.env` (gitignored), created from `.env.example`.
 
 Never commit:
 
-* .env
-* API Keys
-* Certificates
+* `.env`
+* API keys
+* Certificates / private keys (`runtime/`)
 * Cloudflare credentials
 
 ---
 
 # Docker
 
-Validate:
-
 ```bash
-docker compose config
+docker compose config       # validate
+docker compose up -d        # deploy / reconcile the whole stack
+docker compose up -d <svc>  # one service
+docker compose build <svc>  # rebuild an image (e.g. webterm)
+docker compose restart <svc>
 ```
 
-Deploy:
+The top-level `compose.yml` uses `include:` to pull in each `compose/*.yml`;
+all services share the external `pihub` network.
 
-```bash
-docker compose up -d
-```
+---
 
-Restart a service:
+# Remote-access dashboard
 
-```bash
-restart homepage
-```
+Served by nginx at `https://pihub.tail9b70d.ts.net:8090` (TLS via a Tailscale
+cert), tailnet/LAN only. It embeds:
 
-Restart entire stack:
-
-```bash
-restart all
-```
+* **Guacamole** tiles for VNC/RDP (rendered server-side by guacd).
+* **webterm** tiles for SSH (rendered client-side with xterm.js) - proxied
+  same-origin at `/webterm/` so clipboard and key handling work. See
+  `services/webterm/README.md` for the UTF-8 locale fix and self-hosted font.
 
 ---
 
 # Cloudflare
 
-Tunnel Name
-
-```text
-homelabinternal
-```
-
-Tunnel credentials are stored outside the repository:
-
-```text
-~/.cloudflared/
-```
-
-Contents:
-
-```text
-cert.pem
-<tunnel-id>.json
-```
-
-These files are backed up but never committed to Git.
+Tunnel name: `homelabinternal`. Credentials live outside the repo in
+`~/.cloudflared/` (`cert.pem` + `<tunnel-id>.json`) - backed up, never
+committed. Public endpoints (`*.melolab.dev`) are all gated by **Cloudflare
+Access** with a specific-email allowlist.
 
 ---
 
-# Homepage
+# Backup / Restore
 
-Public URL
+Config is the backup: the whole stack definition is in this repo, secrets are
+in `.env` / 1Password, and persistent data is in `runtime/`. Rebuild is:
 
-```text
-https://status.melolab.dev
-```
+1. Install Raspberry Pi OS / Debian, clone this repo.
+2. Restore `.env` and `~/.cloudflared/` credentials.
+3. Restore `runtime/` data (or start fresh).
+4. `docker compose up -d`.
 
-Homepage configuration:
-
-```text
-services/homepage/config/
-```
-
-Current configuration files:
-
-* services.yaml
-* bookmarks.yaml
-* widgets.yaml
-* settings.yaml
-* docker.yaml
-
----
-
-# Uptime Kuma
-
-Public URL
-
-```text
-https://uptime.melolab.dev
-```
-
-Persistent data:
-
-```text
-services/uptime-kuma/data
-```
-
----
-
-# Pi-hole (Planned)
-
-DNS
-
-```text
-53/TCP
-53/UDP
-```
-
-Admin
-
-```text
-https://pihole.melolab.dev
-```
-
-Persistent configuration:
-
-```text
-services/pihole/etc-pihole
-services/pihole/etc-dnsmasq.d
-```
-
----
-
-# Backup
-
-Current backup targets:
-
-* Cloudflare credentials
-* Docker configuration
-* Compose files
-* Environment files
-* Persistent service data
-
-See:
-
-```text
-backups/
-```
-
----
-
-# Restore
-
-1. Install Raspberry Pi OS or Ubuntu.
-2. Clone repository.
-3. Run bootstrap.
-4. Restore Cloudflare credentials.
-5. Restore Docker volumes.
-6. Configure .env.
-7. Run:
-
-```bash
-docker compose up -d
-```
-
----
-
-# Roadmap
-
-## Phase 1
-
-* Homepage
-* Uptime Kuma
-* Cloudflared
-
-## Phase 2
-
-* Pi-hole
-* Unbound
-
-## Phase 3
-
-* Grafana
-* Loki
-* Prometheus
-
-## Phase 4
-
-* Vaultwarden
-* Gitea
-* Portainer
-
-## Phase 5
-
-* Automated backups
-* Centralized logging
-* AI Infrastructure Assistant
-* Cloudflare Access
-* GitOps
+Fleet backups (Proxmox -> Synology) are documented in the Birdview repo
+(`docs/backups.md`), not here.
 
 ---
 
 # Remote Access Roadmap
 
-The control-hub dashboard (`:8090`, HTTPS via a Tailscale cert) is how the
-fleet is driven from a browser.
+The dashboard is how the fleet is driven from a browser.
 
 Current:
 
@@ -343,10 +154,8 @@ Next:
 
 # Design Principles
 
-* Docker Compose v2
-* Modular compose files
-* Infrastructure as Code
-* Portable architecture
+* Docker Compose v2, modular compose files
+* Infrastructure as Code, portable architecture
 * Minimal manual configuration
 * Secure by default
 * Documentation is part of the project
